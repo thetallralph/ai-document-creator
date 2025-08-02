@@ -1,0 +1,142 @@
+.page-checker-panel {
+  background: #2a2a2a;
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.page-checker-panel .panel-header {
+  padding: 12px 16px;
+  background: #333;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.page-checker-panel .panel-header:hover {
+  background: #3a3a3a;
+}
+
+.page-checker-panel h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check-summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.check-summary span {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.error-count {
+  background: #dc3545;
+  color: white;
+}
+
+.warning-count {
+  background: #ffc107;
+  color: #000;
+}
+
+.info-count {
+  background: #17a2b8;
+  color: white;
+}
+
+.page-checker-panel .panel-content {
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-issues {
+  text-align: center;
+  padding: 20px;
+  color: #4ade80;
+  font-size: 14px;
+}
+
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #1a1a1a;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.check-item.error {
+  background: rgba(220, 53, 69, 0.1);
+  border-left: 3px solid #dc3545;
+}
+
+.check-item.warning {
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid #ffc107;
+}
+
+.check-item.info {
+  background: rgba(23, 162, 184, 0.1);
+  border-left: 3px solid #17a2b8;
+}
+
+.check-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.check-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.check-category {
+  font-weight: 600;
+  color: #ccc;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.check-message {
+  color: #aaa;
+  line-height: 1.4;
+}
+
+/* Custom scrollbar for check list */
+.page-checker-panel .panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page-checker-panel .panel-content::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.page-checker-panel .panel-content::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.page-checker-panel .panel-content::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}

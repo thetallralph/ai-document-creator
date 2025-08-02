@@ -1,8 +1,17 @@
-import DocumentEditor from './components/DocumentEditor'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DocumentList from './components/DocumentList';
+import DocumentViewer from './components/DocumentViewer';
+import './App.css';
 
 function App() {
-  return <DocumentEditor />
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<DocumentList />} />
+        <Route path="/documents/:documentName" element={<DocumentViewer />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
