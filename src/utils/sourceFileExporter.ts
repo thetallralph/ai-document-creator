@@ -1,8 +1,5 @@
 // Map of template names to their source file paths
 const templateSourcePaths: Record<string, string> = {
-  'Outlet Sale Flyer': '/src/documents/outlet-flyer/OutletFlyer.tsx',
-  'Outlet Product Catalog': '/src/documents/outlet-catalog/OutletCatalog.tsx',
-  'Outlet Presentation': '/src/documents/outlet-presentation/OutletPresentation.tsx',
   'Cactuce Solutions Booklet': '/src/documents/cactuce-booklet/CactuceBooklet.tsx',
   'Plan d\'Affaires - The Green Rooftop Parc': '/src/documents/green-rooftop-business-plan/GreenRooftopBusinessPlan.tsx'
 };

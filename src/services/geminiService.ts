@@ -39,7 +39,7 @@ export const geminiService = {
     }
     
     try {
-      const testModel = genAI!.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const testModel = genAI!.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
       // Simple test to verify the API key works
       const result = await testModel.generateContent('Hello');
       await result.response;
@@ -73,7 +73,7 @@ export const geminiService = {
     if (!genAI) throw new Error('Gemini API not configured');
     if (!isAuthenticated) throw new Error('Not authenticated. Please check your API key.');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `
       Analyze this document content and provide professional design and content suggestions.
@@ -119,7 +119,7 @@ export const geminiService = {
     if (!genAI) throw new Error('Gemini API not configured');
     if (!isAuthenticated) throw new Error('Not authenticated. Please check your API key.');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `
       Suggest an improvement for this ${elementType} element in a document.
@@ -143,7 +143,7 @@ export const geminiService = {
     if (!genAI) throw new Error('Gemini API not configured');
     if (!isAuthenticated) throw new Error('Not authenticated. Please check your API key.');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const fullPrompt = `
       Context: ${context}
@@ -166,7 +166,7 @@ export const geminiService = {
     if (!genAI) throw new Error('Gemini API not configured');
     if (!isAuthenticated) throw new Error('Not authenticated. Please check your API key.');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompts = {
       clarity: 'Rewrite this text to be clearer and easier to understand',
@@ -201,7 +201,7 @@ export const geminiService = {
     console.log('Document type:', documentType);
     console.log('Additional instructions:', additionalInstructions || 'None');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `
       You are a professional UI/UX designer improving the content inside a document page.
@@ -284,7 +284,7 @@ export const geminiService = {
     console.log('Additional instructions:', additionalInstructions || 'None');
     console.log('Page content length:', pageInnerContent.length);
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `
       You are a professional UI/UX designer improving the content inside a document page.
@@ -368,3 +368,22 @@ export const geminiService = {
     }
   }
 };
+
+export async function generateDocumentTemplate(prompt: string): Promise<string> {
+  if (!genAI) {
+    throw new Error('Gemini AI is not configured. Please set VITE_GEMINI_API_KEY in your .env file');
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: import.meta.env.VITE_LLM_MODEL || 'gemini-2.0-flash-exp'
+    });
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error: any) {
+    console.error('Error generating document template:', error);
+    throw new Error(error.message || 'Failed to generate document template');
+  }
+}

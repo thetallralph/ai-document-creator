@@ -1,20 +1,11 @@
 // Dynamic source code loader that fetches actual document source files
 // In a real application, this would make HTTP requests to fetch the source
 
-import { OutletFlyer } from '../documents/outlet-flyer/OutletFlyer';
-import { OutletCatalog } from '../documents/outlet-catalog/OutletCatalog';
-import { OutletPresentation } from '../documents/outlet-presentation/OutletPresentation';
 import { CactuceBooklet } from '../documents/cactuce-booklet/CactuceBooklet';
 import { GreenRooftopBusinessPlan } from '../documents/green-rooftop-business-plan/GreenRooftopBusinessPlan';
 import { inlineStyles, getStyleNameForComponent } from './styleInliner';
 
 // Import raw source files as text
-// @ts-expect-error - Vite raw import
-import OutletFlyerSource from '../documents/outlet-flyer/OutletFlyer.tsx?raw';
-// @ts-expect-error - Vite raw import
-import OutletCatalogSource from '../documents/outlet-catalog/OutletCatalog.tsx?raw';
-// @ts-expect-error - Vite raw import
-import OutletPresentationSource from '../documents/outlet-presentation/OutletPresentation.tsx?raw';
 // @ts-expect-error - Vite raw import
 import CactuceBookletSource from '../documents/cactuce-booklet/CactuceBooklet.tsx?raw';
 // @ts-expect-error - Vite raw import
@@ -22,9 +13,6 @@ import GreenRooftopBusinessPlanSource from '../documents/green-rooftop-business-
 
 // Map component names to their raw source code
 const sourceMap: Record<string, string> = {
-  OutletFlyer: OutletFlyerSource,
-  OutletCatalog: OutletCatalogSource,
-  OutletPresentation: OutletPresentationSource,
   CactuceBooklet: CactuceBookletSource,
   GreenRooftopBusinessPlan: GreenRooftopBusinessPlanSource,
 };

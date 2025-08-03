@@ -1,1 +1,0 @@
-export { OutletCatalog } from './OutletCatalog';

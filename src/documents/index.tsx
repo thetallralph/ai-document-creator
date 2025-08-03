@@ -1,4 +1,3 @@
 // Export components for direct use
-export { OutletFlyer } from './outlet-flyer';
-export { OutletCatalog } from './outlet-catalog';
-export { OutletPresentation } from './outlet-presentation';
+export { CactuceBooklet } from './cactuce-booklet';
+export { GreenRooftopBusinessPlan } from './green-rooftop-business-plan';

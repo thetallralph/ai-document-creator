@@ -23,7 +23,7 @@ interface PageElement {
 }
 
 const DocumentViewer: React.FC = () => {
-  const { documentName, templateId } = useParams<{ documentName?: string; templateId?: string }>();
+  const { documentName } = useParams<{ documentName?: string }>();
   const [zoom, setZoom] = useState(75);
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const documentRef = useRef<HTMLDivElement>(null);
@@ -43,20 +43,26 @@ const DocumentViewer: React.FC = () => {
   const { setEditorCode } = useEditorCode();
   
   // Find the template - either static or dynamic
-  let template;
-  if (templateId) {
-    const dynamicTemplate = getDynamicTemplate(templateId);
-    template = dynamicTemplate;
-  } else if (documentName) {
+  let template: any;
+  if (documentName) {
+    // First check static templates
     template = allTemplates.find(
       t => t.name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '') === documentName
     );
+    
+    // If not found in static, check dynamic templates
+    if (!template) {
+      const dynamicTemplate = getDynamicTemplate(documentName);
+      if (dynamicTemplate) {
+        template = dynamicTemplate;
+      }
+    }
   }
   
   // Reset editable component when switching documents
   useEffect(() => {
     setEditableComponent(null);
-  }, [documentName, templateId]);
+  }, [documentName]);
 
   // Load source code when template is available
   useEffect(() => {
@@ -66,6 +72,12 @@ const DocumentViewer: React.FC = () => {
       }
       
       try {
+        // Check if template has code (dynamic template)
+        if ('code' in template && template.code) {
+          setEditorCode(template.code);
+          return;
+        }
+        
         // Try to get source from template source first
         let source = template.name ? getTemplateSource(template.name) : null;
         
@@ -225,13 +237,15 @@ const DocumentViewer: React.FC = () => {
     return (
       <div className="document-viewer-error">
         <h2>Document not found</h2>
-        <p>The document "{documentName || templateId}" could not be found.</p>
+        <p>The document "{documentName}" could not be found.</p>
         <Link to="/">← Back to documents</Link>
       </div>
     );
   }
   
+  // For dynamic templates, component might not exist yet
   const Component = template.component;
+  const isDynamicTemplate = 'code' in template && !template.component;
   
   const renderLayerItem = (layer: PageElement, depth: number = 0) => (
     <div key={layer.id} className="layer-item" style={{ paddingLeft: depth * 20 }}>
@@ -327,11 +341,15 @@ const DocumentViewer: React.FC = () => {
           <button 
             className="export-button"
             onClick={() => {
-              const serialized = serializeDocument(Component);
-              if (serialized) {
-                downloadTemplate(serialized);
+              if (Component) {
+                const serialized = serializeDocument(Component);
+                if (serialized) {
+                  downloadTemplate(serialized);
+                } else {
+                  alert('Failed to export template');
+                }
               } else {
-                alert('Failed to export template');
+                alert('Please switch to Code view and compile the template first');
               }
             }}
             title="Export Template as JSON"
@@ -342,6 +360,10 @@ const DocumentViewer: React.FC = () => {
             className="export-button"
             onClick={() => {
               // Export template in Babel-compatible format
+              if (!Component && isDynamicTemplate) {
+                alert('Please switch to Code view and compile the template first');
+                return;
+              }
               const exportedCode = exportTemplateForBabel(template.name, Component);
               
               if (exportedCode) {
@@ -456,9 +478,15 @@ const DocumentViewer: React.FC = () => {
                       // Otherwise, render it as a component
                       const EditedComponent = editableComponent;
                       return <EditedComponent />;
-                    } else {
+                    } else if (Component) {
                       console.log('Using original component');
                       return <Component />;
+                    } else if (isDynamicTemplate) {
+                      // For dynamic templates without a compiled component yet
+                      return <div style={{ padding: '20px', textAlign: 'center' }}>
+                        <p>Loading dynamic template...</p>
+                        <p style={{ fontSize: '14px', color: '#666' }}>Switch to Code view to see and compile the template.</p>
+                      </div>;
                     }
                   })()}
                 </div>
@@ -469,7 +497,7 @@ const DocumentViewer: React.FC = () => {
           <div style={{ display: viewMode === 'code' ? 'flex' : 'none', height: '100%', flexDirection: 'column' }}>
             <CodeEditor 
               documentComponent={Component}
-              documentName={template.component.name}
+              documentName={template.name || (Component && Component.name) || 'Document'}
               onCodeChange={(updatedComponent) => {
                 console.log('onCodeChange received:', updatedComponent);
                 console.log('Type:', typeof updatedComponent);
@@ -533,8 +561,8 @@ const DocumentViewer: React.FC = () => {
             selectedPageIndex={selectedPage}
           />
           
-          {/* Layers Panel */}
-          <div className={`panel layers-panel-container ${layersPanelCollapsed ? 'collapsed' : ''}`}>
+          {/* Layers Panel - Hidden for now */}
+          {/* <div className={`panel layers-panel-container ${layersPanelCollapsed ? 'collapsed' : ''}`}>
             <div className="panel-header clickable" onClick={() => setLayersPanelCollapsed(!layersPanelCollapsed)}>
               <h3>Layers</h3>
               <div className="panel-header-right">
@@ -553,7 +581,7 @@ const DocumentViewer: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

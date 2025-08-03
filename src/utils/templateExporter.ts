@@ -88,12 +88,6 @@ function transformSourceForExport(source: string): string {
       for (const varName of imp.vars) {
         if (varName === 'cactuceStyles') {
           transformed = inlineCactuceStyles() + '\n\n' + transformed;
-        } else if (varName === 'outletCatalogStyles') {
-          transformed = inlineOutletCatalogStyles() + '\n\n' + transformed;
-        } else if (varName === 'outletFlyerStyles') {
-          transformed = inlineOutletFlyerStyles() + '\n\n' + transformed;
-        } else if (varName === 'outletPresentationStyles') {
-          transformed = inlineOutletPresentationStyles() + '\n\n' + transformed;
         }
         // For any other style imports, we'll try to inline them as empty objects
         else if (!transformed.includes(`const ${varName}`)) {
@@ -179,66 +173,6 @@ function inlineCactuceStyles(): string {
 };`;
 }
 
-/**
- * Inline the outlet catalog styles
- */
-function inlineOutletCatalogStyles(): string {
-  return `const outletCatalogStyles = {
-  colors: {
-    primary: '#1a1a1a',
-    secondary: '#333333',
-    accent: '#e74c3c',
-    background: '#ffffff',
-    text: {
-      primary: '#1a1a1a',
-      secondary: '#333333',
-      light: '#555555'
-    },
-    surface: {
-      primary: '#e8e8e8',
-      secondary: '#f5f5f5'
-    }
-  },
-  typography: {
-    fontFamilies: {
-      heading: 'Georgia, serif',
-      body: 'system-ui, -apple-system, sans-serif'
-    },
-    sizes: {
-      h1: 48,
-      h2: 28,
-      h3: 18,
-      h4: 15,
-      large: 18,
-      regular: 14,
-      small: 12,
-      caption: 11
-    }
-  },
-  spacing: {
-    xs: 3,
-    sm: 5,
-    md: 10,
-    lg: 15,
-    xl: 25,
-    xxl: 30
-  }
-};`;
-}
-
-/**
- * Inline outlet flyer styles (placeholder)
- */
-function inlineOutletFlyerStyles(): string {
-  return `const outletFlyerStyles = {};`;
-}
-
-/**
- * Inline outlet presentation styles (placeholder)
- */
-function inlineOutletPresentationStyles(): string {
-  return `const outletPresentationStyles = {};`;
-}
 
 /**
  * Create a template from scratch (for dynamic templates)

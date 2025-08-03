@@ -12,7 +12,7 @@ export class GeminiAdapter implements LLMService {
   private apiKey: string | undefined;
   private model: string;
 
-  constructor(apiKey?: string, model: string = 'gemini-1.5-flash') {
+  constructor(apiKey?: string, model: string = 'gemini-2.0-flash-exp') {
     this.apiKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
     this.model = model;
     

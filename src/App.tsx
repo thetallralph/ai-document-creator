@@ -13,7 +13,6 @@ function App() {
           <Routes>
             <Route path="/" element={<DocumentList />} />
             <Route path="/documents/:documentName" element={<DocumentViewer />} />
-            <Route path="/dynamic/:templateId" element={<DocumentViewer />} />
           </Routes>
         </Router>
       </EditorCodeProvider>

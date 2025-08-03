@@ -1,14 +1,18 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { DocumentTemplate } from '../documents/templates';
 
-interface DynamicTemplate extends DocumentTemplate {
-  isDynamic: boolean;
+interface DynamicTemplate {
   id: string;
+  name: string;
+  description: string;
+  code: string;
+  component?: React.FC;
+  isDynamic: boolean;
 }
 
 interface TemplateContextType {
   dynamicTemplates: DynamicTemplate[];
-  addDynamicTemplate: (name: string, description: string, component: React.FC) => string;
+  addDynamicTemplate: (template: Omit<DynamicTemplate, 'isDynamic'>) => string;
   removeDynamicTemplate: (id: string) => void;
   getDynamicTemplate: (id: string) => DynamicTemplate | undefined;
 }
@@ -26,18 +30,14 @@ export const useTemplates = () => {
 export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [dynamicTemplates, setDynamicTemplates] = useState<DynamicTemplate[]>([]);
 
-  const addDynamicTemplate = (name: string, description: string, component: React.FC): string => {
-    const id = `dynamic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const addDynamicTemplate = (template: Omit<DynamicTemplate, 'isDynamic'>): string => {
     const newTemplate: DynamicTemplate = {
-      id,
-      name,
-      description,
-      component,
+      ...template,
       isDynamic: true
     };
     
     setDynamicTemplates(prev => [...prev, newTemplate]);
-    return id;
+    return template.id;
   };
 
   const removeDynamicTemplate = (id: string) => {

@@ -241,3 +241,21 @@ Keep suggestions concise and practical.`;
 }
 
 export const mistralService = new MistralService();
+
+export async function generateDocumentTemplate(prompt: string): Promise<string> {
+  if (!mistralService.isConnected()) {
+    throw new Error('Mistral AI is not configured. Please set VITE_MISTRAL_API_KEY in your .env file');
+  }
+
+  try {
+    // Add a public method to the class or use the existing private methods
+    const service = mistralService as any;
+    const response = service.useAgent 
+      ? await service.sendMessageToAgent(prompt)
+      : await service.sendMessageToModel(prompt, 0.7, 8000); // Higher max tokens for document generation
+    return response;
+  } catch (error: any) {
+    console.error('Error generating document template:', error);
+    throw new Error(error.message || 'Failed to generate document template');
+  }
+}

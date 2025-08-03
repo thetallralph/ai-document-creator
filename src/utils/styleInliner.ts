@@ -1,14 +1,8 @@
 // Import all style files
-import { outletFlyerStyles } from '../documents/outlet-flyer/styles';
-import { outletCatalogStyles } from '../documents/outlet-catalog/styles';
-import { outletPresentationStyles } from '../documents/outlet-presentation/styles';
 import { cactuceStyles } from '../documents/cactuce-booklet/styles';
 
 // Map of style names to their actual objects
 export const styleMap: Record<string, any> = {
-  outletFlyerStyles,
-  outletCatalogStyles,
-  outletPresentationStyles,
   cactuceStyles,
 };
 
@@ -61,9 +55,6 @@ export function inlineStyles(source: string, styleName: string): string {
 // Get the style name from the component name
 export function getStyleNameForComponent(componentName: string): string | null {
   const styleMapping: Record<string, string> = {
-    OutletFlyer: 'outletFlyerStyles',
-    OutletCatalog: 'outletCatalogStyles',
-    OutletPresentation: 'outletPresentationStyles',
     CactuceBooklet: 'cactuceStyles',
   };
   
