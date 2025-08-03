@@ -6,6 +6,7 @@ import { OutletCatalog } from '../documents/outlet-catalog/OutletCatalog';
 import { OutletPresentation } from '../documents/outlet-presentation/OutletPresentation';
 import { CactuceBooklet } from '../documents/cactuce-booklet/CactuceBooklet';
 import { GreenRooftopBusinessPlan } from '../documents/green-rooftop-business-plan/GreenRooftopBusinessPlan';
+import { inlineStyles, getStyleNameForComponent } from './styleInliner';
 
 // Import raw source files as text
 // @ts-expect-error - Vite raw import
@@ -34,41 +35,18 @@ export async function loadDocumentSource(componentName: string): Promise<string 
     const source = sourceMap[componentName];
     
     if (source) {
-      // Process the source to make it editable
-      // Remove style imports and replace with inline styles
-      let processedSource = source
-        .replace(/import\s+{\s*\w+Styles\s*}\s+from\s+['"]\.\/styles['"];?/g, '')
-        .replace(/const\s+styles\s*=\s*\w+Styles;?/g, '');
+      // Get the style name for this component
+      const styleName = getStyleNameForComponent(componentName);
       
-      // Replace styles references with inline values
-      // This is a simplified version - in production you'd parse and inline the actual styles
-      processedSource = processedSource
-        .replace(/styles\.colors\.(\w+)/g, (match, colorName) => {
-          const colorMap: Record<string, string> = {
-            green: '#27ae60',
-            darkGray: '#2c3e50',
-            lightGreen: '#e8f8f5',
-            blue: '#3498db',
-            lightBlue: '#ebf5fb',
-            orange: '#e67e22',
-            lightOrange: '#fdf2e9',
-            textPrimary: '#333333',
-            primary: '#667eea',
-          };
-          return `'${colorMap[colorName] || '#000000'}'`;
-        })
-        .replace(/styles\.fonts\.(\w+)/g, "'sans-serif'")
-        .replace(/styles\.fontWeights\.(\w+)/g, (match, weight) => {
-          const weightMap: Record<string, string> = {
-            normal: '400',
-            medium: '500',
-            semibold: '600',
-            bold: '700',
-          };
-          return weightMap[weight] || '400';
-        });
-      
-      return processedSource;
+      if (styleName) {
+        // Use the comprehensive style inliner
+        return inlineStyles(source, styleName);
+      } else {
+        // For components without styles, just remove import statements
+        return source
+          .replace(/import\s+{\s*\w+Styles\s*}\s+from\s+['"]\.\/styles['"];?/g, '')
+          .replace(/const\s+styles\s*=\s*\w+Styles;?/g, '');
+      }
     }
     
     // Return a default template if source not found

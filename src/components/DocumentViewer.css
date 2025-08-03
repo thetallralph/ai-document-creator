@@ -210,7 +210,9 @@
   overflow-y: auto;
 }
 
+
 .sidebar-right {
+  width: 320px; /* Wider to accommodate both panels */
   border-right: none;
   border-left: 1px solid #1a1a1a;
   display: flex;
@@ -218,45 +220,62 @@
   overflow: hidden;
 }
 
-/* Right sidebar panel layout */
-.sidebar-right > .panel:first-child {
-  flex: 0 0 60%;
+/* Right sidebar layout - two separate panels */
+.sidebar-right {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* AI Assistant panel in right sidebar (top) */
+.sidebar-right > .ai-assistant-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: flex 0.3s ease;
+  border-bottom: 1px solid #1a1a1a;
 }
 
-.sidebar-right > .panel:first-child.collapsed {
+.sidebar-right > .ai-assistant-panel.collapsed {
   flex: 0 0 auto;
 }
 
-/* When layers panel is collapsed, AI assistant takes remaining space */
-.sidebar-right > .panel.collapsed ~ .ai-assistant-panel {
-  flex: 1;
-}
-
-/* AI Assistant panel in right sidebar */
-.sidebar-right > .ai-assistant-panel {
-  flex: 0 0 40%;
+/* Layers panel in right sidebar (bottom) */
+.sidebar-right .layers-panel-container {
+  flex: 0 0 auto;
+  max-height: 40%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: flex 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-/* Left sidebar Page Checker panel */
-.sidebar-left > .page-checker-panel {
+.sidebar-right .layers-panel-container.collapsed {
+  flex: 0 0 auto;
+  max-height: auto;
+}
+
+/* When AI assistant is collapsed, layers panel can expand */
+.sidebar-right .ai-assistant-panel.collapsed ~ .layers-panel-container {
   flex: 1;
+  max-height: 100%;
+}
+
+/* Left sidebar layout */
+.sidebar-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Page Checker panel */
+.sidebar-left > .page-checker-panel {
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin-top: 0;
-}
-
-/* When AI panel is collapsed */
-.sidebar-right > .ai-assistant-panel.collapsed {
-  flex: 0 0 auto;
 }
 
 /* Panels */
@@ -265,6 +284,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Collapsed panel styling */
+.panel.collapsed {
+  flex: 0 0 auto !important;
+}
+
+.panel.collapsed .panel-content {
+  display: none;
 }
 
 .panel-header {
@@ -398,6 +426,7 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  min-height: 0; /* Fix for flex children */
 }
 
 .canvas-container {
@@ -408,12 +437,13 @@
   overflow: auto;
   padding: 40px;
   scroll-behavior: smooth;
+  min-height: 0; /* Fix for flex children */
+  position: relative;
 }
 
 .document-wrapper {
   transform-origin: top center;
   transition: transform 0.2s ease-out;
-  min-height: 100%;
 }
 
 .document-shadow {
@@ -530,6 +560,11 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+/* When layers panel container is collapsed */
+.layers-panel-container.collapsed .layers-panel {
+  display: none;
 }
 
 .layer-item {
@@ -900,8 +935,6 @@
   }
   
   /* Custom size handling - use data attributes for dimensions */
-  [data-paper-width][data-paper-height] [data-page] {
-    /* Width and height will be set by inline styles in the print handler */
-  }
+  /* Width and height for custom sizes will be set by inline styles in the print handler */
   
 }

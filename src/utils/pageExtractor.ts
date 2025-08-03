@@ -142,3 +142,10 @@ export function replacePageInnerContent(sourceCode: string, pageIndex: number, n
          newFullPage + 
          sourceCode.substring(page.endIndex);
 }
+
+/**
+ * Get all pages from the source code (alias for extractPages for better naming)
+ */
+export function extractAllPages(sourceCode: string): PageInfo[] {
+  return extractPages(sourceCode);
+}

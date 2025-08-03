@@ -1,0 +1,17 @@
+{
+  "name": "ai-document-creator-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node claudeService.js",
+    "dev": "nodemon claudeService.js"
+  },
+  "dependencies": {
+    "@instantlyeasy/claude-code-sdk-ts": "^0.3.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

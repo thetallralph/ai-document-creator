@@ -188,10 +188,17 @@ const DocumentViewer: React.FC = () => {
     
     const pageElements = Array.from(documentRef.current.querySelectorAll('[data-page]'));
     if (pageElements[pageIndex]) {
-      const pageTop = (pageElements[pageIndex] as HTMLElement).offsetTop;
-      const wrapperTop = documentRef.current.offsetTop;
+      const pageElement = pageElements[pageIndex] as HTMLElement;
+      // Use getBoundingClientRect for more accurate positioning
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const pageRect = pageElement.getBoundingClientRect();
+      
+      // Calculate the distance to scroll
+      const currentScroll = canvasRef.current.scrollTop;
+      const relativeTop = pageRect.top - canvasRect.top + currentScroll;
+      
       canvasRef.current.scrollTo({
-        top: pageTop - wrapperTop - 40, // 40px for padding
+        top: relativeTop - 40, // 40px for padding at the top
         behavior: 'smooth'
       });
     }
@@ -426,7 +433,7 @@ const DocumentViewer: React.FC = () => {
         {/* Center - Document Canvas or Code Editor */}
         <div className="viewer-canvas">
           {/* Always render both views but only show the active one */}
-          <div style={{ display: viewMode === 'visual' ? 'block' : 'none', height: '100%' }}>
+          <div style={{ display: viewMode === 'visual' ? 'flex' : 'none', height: '100%', flexDirection: 'column' }}>
             <div className="canvas-container" ref={canvasRef}>
               <div 
                 className="document-wrapper"
@@ -459,7 +466,7 @@ const DocumentViewer: React.FC = () => {
             </div>
           </div>
           
-          <div style={{ display: viewMode === 'code' ? 'block' : 'none', height: '100%' }}>
+          <div style={{ display: viewMode === 'code' ? 'flex' : 'none', height: '100%', flexDirection: 'column' }}>
             <CodeEditor 
               documentComponent={Component}
               documentName={template.component.name}
@@ -515,9 +522,19 @@ const DocumentViewer: React.FC = () => {
           )}
         </div>
         
-        {/* Right Sidebar - Layers */}
+        {/* Right Sidebar - AI Assistant and Layers */}
         <div className="sidebar sidebar-right">
-          <div className={`panel ${layersPanelCollapsed ? 'collapsed' : ''}`}>
+          {/* AI Assistant Panel */}
+          <AIAssistant 
+            documentContent={documentRef.current?.innerHTML || ''}
+            documentType={template?.type || 'document'}
+            collapsed={aiPanelCollapsed}
+            onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}
+            selectedPageIndex={selectedPage}
+          />
+          
+          {/* Layers Panel */}
+          <div className={`panel layers-panel-container ${layersPanelCollapsed ? 'collapsed' : ''}`}>
             <div className="panel-header clickable" onClick={() => setLayersPanelCollapsed(!layersPanelCollapsed)}>
               <h3>Layers</h3>
               <div className="panel-header-right">
@@ -537,15 +554,6 @@ const DocumentViewer: React.FC = () => {
               </div>
             )}
           </div>
-          
-          {/* AI Assistant Panel */}
-          <AIAssistant 
-            documentContent={documentRef.current?.innerHTML || ''}
-            documentType={template?.type || 'document'}
-            collapsed={aiPanelCollapsed}
-            onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}
-            selectedPageIndex={selectedPage}
-          />
         </div>
       </div>
     </div>

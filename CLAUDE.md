@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **React Router** for navigation and document URLs
 - **Vite** as build tool and dev server
 - **@google/generative-ai** for Gemini AI integration
+- **@anthropic-ai/sdk** for Claude AI integration
+- **@mistralai/mistralai** for Mistral AI integration
 - **@monaco-editor/react** for code editing
 - **@babel/standalone** for runtime JSX compilation
 
@@ -95,18 +97,25 @@ Each size includes width/height in pixels (72 DPI) and display name.
    - Nested structure visualization
    - Selection highlighting
    - Takes up 60% of right sidebar height with scrollable content
-4. **AI Assistant Panel** (`src/components/AIAssistant.tsx`) - AI-powered document improvement tools:
-   - **Connection Status**: Shows Gemini AI connection status in header
-   - **Manual Analysis**: Click "Analyze Document" for design suggestions (no auto-analysis)
-   - **Improve Page Layout**: 
-     - Always uses current code editor content via global context
-     - Token-efficient: Only sends selected page content to AI
-     - Directly updates editor code, triggering automatic recompilation
-     - Optional user instructions for specific improvements
-     - Real-time updates in both code editor and visual view
-   - **Text Improvement**: Enhance clarity, conciseness, tone, or grammar
-   - Takes up 40% of right sidebar height
-   - Requires Gemini API key in `.env` file
+4. **AI Assistant Panel** (`src/components/AIAssistant.tsx`) - Chat-based AI document improvement interface:
+   - **Connection Status**: Shows AI provider (Gemini/Claude/Mistral) connection status in header
+   - **Context Selector**: 
+     - Visual grid of page numbers for selecting which pages to include in AI context
+     - Multiple pages can be selected for multi-page improvements
+     - Current page highlighted with yellow border, selected pages in purple
+     - Shows "Selected: X, Y | Current: Page Z" summary
+   - **Chat Interface**:
+     - Full conversation history showing all user requests and AI responses
+     - Success messages show "✓ Successfully updated Page X" instead of raw code
+     - Fixed input field at bottom for continuous access while scrolling
+     - Enter to send, Shift+Enter for new line
+     - Typing indicator while AI is processing
+   - **Layout**:
+     - Entire content area (context selector + chat history) is scrollable
+     - Input field remains fixed at bottom with subtle shadow
+     - Takes up 40% of right sidebar height
+   - **Auto-apply**: Automatically applies changes when AI returns JSX content for single page
+   - Requires API key in `.env` file based on selected provider
 5. **Page Checker Panel** (`src/components/PageChecker.tsx`) - Quality assurance tool:
    - Located in left sidebar under Pages panel
    - **Font Size Issues**: Errors for text < 8px, warnings for 8-10px
@@ -178,13 +187,78 @@ export const MyDocument = () => {
 
 ## AI Integration Setup
 
+### LLM Provider Selection
+The app supports Gemini, Claude, and Mistral AI models. Configure your preferred provider in `.env`:
+
+```bash
+# Choose between 'gemini', 'claude', or 'mistral' (default: gemini)
+VITE_LLM_PROVIDER=gemini
+```
+
 ### Gemini API Configuration
 1. Get an API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a `.env` file in the project root:
+2. Add to `.env` file:
    ```
    VITE_GEMINI_API_KEY=your-api-key-here
    ```
-3. The AI Assistant will show connection status in the panel header
+
+### Claude Configuration
+
+#### Option 1: Direct API (Development Only)
+1. Get an API key from [Anthropic Console](https://console.anthropic.com/)
+2. Add to `.env` file:
+   ```
+   VITE_CLAUDE_API_KEY=your-api-key-here
+   VITE_USE_CLAUDE_CODE_SDK=false
+   ```
+3. **Security Note**: This uses `dangerouslyAllowBrowser: true` and is only for development.
+
+#### Option 2: Claude Code SDK via Backend (Recommended)
+1. Install Claude CLI globally:
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
+2. Authenticate Claude CLI:
+   ```bash
+   claude login
+   ```
+3. Start the backend service:
+   ```bash
+   cd server
+   npm install
+   npm start
+   ```
+4. Configure `.env`:
+   ```
+   VITE_LLM_PROVIDER=claude
+   VITE_USE_CLAUDE_CODE_SDK=true
+   VITE_CLAUDE_BACKEND_URL=http://localhost:3001
+   ```
+
+The Claude Code SDK option provides access to Claude Pro/Max features through your local Claude CLI authentication.
+
+### Mistral Configuration
+1. Get an API key from [Mistral Console](https://console.mistral.ai/)
+2. Add to `.env` file:
+   ```
+   VITE_MISTRAL_API_KEY=your-api-key-here
+   ```
+3. Optional: Use a specific Mistral agent:
+   ```
+   VITE_MISTRAL_AGENT_ID=your-agent-id-here
+   ```
+   When an agent ID is provided, the app will use the agent instead of the model for all AI operations.
+
+### Model Selection (Optional)
+You can specify which model to use:
+```bash
+# For Gemini: gemini-1.5-flash (default), gemini-1.5-pro
+# For Claude: claude-3-sonnet-20240229 (default), claude-3-opus-20240229, claude-3-haiku-20240307
+# For Mistral: mistral-small-latest (default), mistral-medium-latest, mistral-large-latest
+VITE_LLM_MODEL=
+```
+
+The AI Assistant will show connection status in the panel header
 
 ### AI Features Implementation Details
 

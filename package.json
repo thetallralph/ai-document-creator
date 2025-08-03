@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
     "@babel/standalone": "^7.28.2",
     "@google/generative-ai": "^0.24.1",
+    "@mistralai/mistralai": "^1.7.5",
     "@monaco-editor/react": "^4.7.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",

@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { geminiService, DocumentAnalysis } from '../services/geminiService';
+import React, { useState, useEffect, useRef } from 'react';
+import { getLLMService, LLMFactory } from '../services/llm';
 import { useEditorCode } from '../contexts/EditorCodeContext';
-import { extractPageByIndex, replacePageInnerContent } from '../utils/pageExtractor';
+import { extractPageByIndex, replacePageInnerContent, extractAllPages } from '../utils/pageExtractor';
+import { APIKeyWarning } from './APIKeyWarning';
 import './AIAssistant.css';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 interface AIAssistantProps {
   documentContent: string;
@@ -28,56 +36,43 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'analysis' | 'suggestions' | 'improve-page'>('analysis');
-  const [textInput, setTextInput] = useState('');
-  const [improvementType, setImprovementType] = useState<'clarity' | 'conciseness' | 'tone' | 'grammar'>('clarity');
-  const [improvedText, setImprovedText] = useState('');
-  const [pageInstructions, setPageInstructions] = useState('');
-  const [isImprovingPage, setIsImprovingPage] = useState(false);
+  
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [contextPages, setContextPages] = useState<number[]>([selectedPageIndex]);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const isConfigured = geminiService.isConfigured();
+  const llmService = getLLMService();
+  const isConfigured = llmService.isConfigured();
+  const currentProvider = LLMFactory.getCurrentProvider() || 'gemini';
 
-  const analyzeDocument = async () => {
-    if (!isConfigured) return;
-
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await geminiService.analyzeDocument(documentContent, documentType);
-      setAnalysis(result);
-    } catch (err) {
-      setError('Failed to analyze document. Please try again.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  // Update total pages when editor code changes
+  useEffect(() => {
+    if (editorCode) {
+      const pages = extractAllPages(editorCode);
+      setTotalPages(pages.length);
     }
-  };
+  }, [editorCode]);
 
-  const improveText = async () => {
-    if (!textInput || !isConfigured) return;
-
-    setIsLoading(true);
-    setError(null);
-    try {
-      const improved = await geminiService.improveText(textInput, improvementType);
-      setImprovedText(improved);
-    } catch (err) {
-      setError('Failed to improve text. Please try again.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  // Update context when selected page changes
+  useEffect(() => {
+    if (!contextPages.includes(selectedPageIndex)) {
+      setContextPages([selectedPageIndex]);
     }
-  };
+  }, [selectedPageIndex]);
 
   useEffect(() => {
     const checkAuthentication = async () => {
       if (isConfigured) {
         setIsAuthenticating(true);
-        const authenticated = await geminiService.verifyAuthentication();
+        const authenticated = await llmService.verifyAuthentication();
         setIsConnected(authenticated);
-        setAuthError(authenticated ? null : geminiService.getAuthError());
+        setAuthError(authenticated ? null : llmService.getAuthError());
         setIsAuthenticating(false);
       } else {
         setIsConnected(false);
@@ -86,9 +81,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     };
     
     checkAuthentication();
-  }, [isConfigured]);
+  }, [isConfigured, llmService]);
 
-  // Removed auto-analysis - now only analyze on user request
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const getStatusIcon = () => {
     if (isAuthenticating) {
@@ -105,10 +106,117 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       return 'Authenticating...';
     }
     if (isConnected) {
-      return 'Gemini AI';
+      switch (currentProvider) {
+        case 'claude':
+          return 'Claude AI';
+        case 'mistral':
+          return 'Mistral AI';
+        default:
+          return 'Gemini AI';
+      }
     }
     return 'Disconnected';
   };
+
+  const handleSendMessage = async (messageToSend?: string) => {
+    const message = messageToSend || inputMessage;
+    if (!message || typeof message !== 'string' || !message.trim() || !isConnected || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: message,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Build context from selected pages
+      let context = '';
+      for (const pageIndex of contextPages) {
+        const pageInfo = extractPageByIndex(editorCode, pageIndex);
+        if (pageInfo) {
+          context += `\n\n--- Page ${pageIndex + 1} ---\n${pageInfo.innerContent}`;
+        }
+      }
+
+      // Create prompt with context
+      const prompt = `You are helping improve a document. Here is the current content of the selected page(s):
+
+${context}
+
+User request: ${message}
+
+If the user asks to modify the page, provide ONLY the improved inner content of the Page component without any wrapper.
+Do NOT include <Page> tags or any imports.
+Return ONLY the JSX content that goes inside the Page component.
+
+For styles, ALWAYS use the React inline style syntax: style={{ property: 'value' }}`;
+
+      // Get response from LLM
+      const response = await llmService.improveSinglePage(
+        context,
+        documentType,
+        contextPages[0], // Primary page for context
+        message
+      );
+
+      // Auto-apply if it looks like JSX content
+      let messageContent = response;
+      if (response.includes('<') && response.includes('>')) {
+        if (contextPages.length === 1) {
+          const updatedCode = replacePageInnerContent(
+            editorCode,
+            contextPages[0],
+            response
+          );
+          setEditorCode(updatedCode);
+          messageContent = `✓ Successfully updated Page ${contextPages[0] + 1}`;
+        } else {
+          messageContent = `✓ Generated improvements for Pages ${contextPages.map(p => p + 1).join(', ')}. To apply changes, please select a single page.`;
+        }
+      }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: messageContent,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+    } catch (err) {
+      setError('Failed to get response. Please try again.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const togglePageInContext = (pageIndex: number) => {
+    setContextPages(prev => {
+      if (prev.includes(pageIndex)) {
+        // Don't remove if it's the only page
+        if (prev.length === 1) return prev;
+        return prev.filter(p => p !== pageIndex);
+      } else {
+        return [...prev, pageIndex].sort((a, b) => a - b);
+      }
+    });
+  };
+
 
   return (
     <div className={`panel ai-assistant-panel ${collapsed ? 'collapsed' : ''}`}>
@@ -127,41 +235,31 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
       {!collapsed && (
         <div className="panel-content">
+          {isConnected && import.meta.env.MODE === 'development' && (
+            <APIKeyWarning provider={currentProvider as 'gemini' | 'claude' | 'mistral'} />
+          )}
           {!isConnected ? (
             <div className="ai-config-notice">
               {isAuthenticating ? (
-                <p>🔄 Authenticating with Gemini API...</p>
+                <p>🔄 Authenticating with {currentProvider === 'claude' ? 'Claude' : currentProvider === 'mistral' ? 'Mistral' : 'Gemini'} API...</p>
               ) : (
                 <>
                   <p>⚠️ {authError || 'Not connected'}</p>
                   {!isConfigured && (
                     <>
                       <p>Add your API key to the .env file:</p>
-                      <code>VITE_GEMINI_API_KEY=your-key-here</code>
+                      <code>{currentProvider === 'claude' ? 'See Claude setup instructions in .env.example' : currentProvider === 'mistral' ? 'VITE_MISTRAL_API_KEY=your-key-here' : 'VITE_GEMINI_API_KEY=your-key-here'}</code>
                     </>
                   )}
                   {authError && (
                     <div style={{ fontSize: '12px', marginTop: '10px' }}>
-                      {authError.includes('Invalid') && (
-                        <p>Please check that your API key is correct.</p>
-                      )}
-                      {authError.includes('not authorized') && (
-                        <>
-                          <p>Please enable the Generative Language API:</p>
-                          <ol style={{ textAlign: 'left', paddingLeft: '20px' }}>
-                            <li>Go to Google Cloud Console</li>
-                            <li>Enable "Generative Language API"</li>
-                            <li>Make sure your API key has access</li>
-                          </ol>
-                        </>
-                      )}
                       <button 
                         className="retry-button"
                         onClick={async () => {
                           setIsAuthenticating(true);
-                          const authenticated = await geminiService.verifyAuthentication();
+                          const authenticated = await llmService.verifyAuthentication();
                           setIsConnected(authenticated);
-                          setAuthError(authenticated ? null : geminiService.getAuthError());
+                          setAuthError(authenticated ? null : llmService.getAuthError());
                           setIsAuthenticating(false);
                         }}
                         style={{
@@ -183,262 +281,81 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               )}
             </div>
           ) : (
-
             <>
-              <div className="ai-assistant-tabs">
-                <button 
-                  className={activeTab === 'analysis' ? 'active' : ''}
-                  onClick={() => setActiveTab('analysis')}
-                >
-                  Analysis
-                </button>
-                <button 
-                  className={activeTab === 'suggestions' ? 'active' : ''}
-                  onClick={() => setActiveTab('suggestions')}
-                >
-                  Improve Text
-                </button>
-                <button 
-                  className={activeTab === 'improve-page' ? 'active' : ''}
-                  onClick={() => setActiveTab('improve-page')}
-                >
-                  Improve Page
-                </button>
-              </div>
-
-              <div className="ai-assistant-content">
-            {isLoading && <div className="loading">Analyzing...</div>}
-            {error && <div className="error">{error}</div>}
-
-            {activeTab === 'analysis' && (
-              <div className="analysis-section">
-                {!analysis ? (
-                  <div className="analysis-prompt">
-                    <p>Click the button below to analyze your document's design and get AI-powered suggestions.</p>
-                    <button 
-                      className="analyze-button"
-                      onClick={analyzeDocument}
-                      disabled={isLoading || !isConnected}
-                    >
-                      {isLoading ? 'Analyzing...' : 'Analyze Document'}
-                    </button>
+              {/* Scrollable Content Area */}
+              <div className="chat-scrollable-content">
+                {/* Context Selector */}
+                <div className="context-selector">
+                  <h4>Context Pages</h4>
+                  <div className="page-selector-grid">
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        className={`page-selector-button ${contextPages.includes(i) ? 'selected' : ''} ${i === selectedPageIndex ? 'current' : ''}`}
+                        onClick={() => togglePageInContext(i)}
+                        title={i === selectedPageIndex ? 'Current page' : `Page ${i + 1}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
                   </div>
-                ) : (
-                  <div className="analysis-results">
-                    <div className="scores">
-                      <div className="score-item">
-                        <span>Layout</span>
-                        <div className="score-bar">
-                          <div 
-                            className="score-fill"
-                            style={{ width: `${analysis.layoutScore}%` }}
-                          />
-                        </div>
-                        <span>{analysis.layoutScore}%</span>
-                      </div>
-                      <div className="score-item">
-                        <span>Readability</span>
-                        <div className="score-bar">
-                          <div 
-                            className="score-fill"
-                            style={{ width: `${analysis.readabilityScore}%` }}
-                          />
-                        </div>
-                        <span>{analysis.readabilityScore}%</span>
-                      </div>
-                    </div>
-
-                    <div className="feedback">
-                      <h4>Overall Feedback</h4>
-                      <p>{analysis.overallFeedback}</p>
-                    </div>
-
-                    <div className="suggestions">
-                      <h4>Design Suggestions</h4>
-                      <ul>
-                        {analysis.designSuggestions.map((suggestion, index) => (
-                          <li key={index}>{suggestion}</li>
-                        ))}
-                      </ul>
-
-                      <h4>Content Suggestions</h4>
-                      <ul>
-                        {analysis.contentSuggestions.map((suggestion, index) => (
-                          <li key={index}>{suggestion}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <button 
-                      className="refresh-button"
-                      onClick={analyzeDocument}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Analyzing...' : 'Refresh Analysis'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'suggestions' && (
-              <div className="text-improvement">
-                <h4>Improve Your Text</h4>
-                <textarea
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="Paste or type text to improve..."
-                  rows={4}
-                />
-                
-                <div className="improvement-options">
-                  <label>
-                    <input
-                      type="radio"
-                      value="clarity"
-                      checked={improvementType === 'clarity'}
-                      onChange={(e) => setImprovementType(e.target.value as any)}
-                    />
-                    Clarity
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="conciseness"
-                      checked={improvementType === 'conciseness'}
-                      onChange={(e) => setImprovementType(e.target.value as any)}
-                    />
-                    Conciseness
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="tone"
-                      checked={improvementType === 'tone'}
-                      onChange={(e) => setImprovementType(e.target.value as any)}
-                    />
-                    Professional Tone
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="grammar"
-                      checked={improvementType === 'grammar'}
-                      onChange={(e) => setImprovementType(e.target.value as any)}
-                    />
-                    Grammar
-                  </label>
+                  <p className="context-info">
+                    Selected: {contextPages.map(p => p + 1).join(', ')} | Current: Page {selectedPageIndex + 1}
+                  </p>
                 </div>
 
-                <button 
-                  className="improve-button"
-                  onClick={improveText}
-                  disabled={isLoading || !textInput}
-                >
-                  Improve Text
-                </button>
-
-                {improvedText && (
-                  <div className="improved-result">
-                    <h5>Improved Version:</h5>
-                    <div className="improved-text">{improvedText}</div>
-                    {onSuggestionApply && (
-                      <button 
-                        className="apply-button"
-                        onClick={() => onSuggestionApply(improvedText)}
-                      >
-                        Apply to Document
-                      </button>
-                    )}
-                  </div>
-                )}
+                {/* Chat Messages */}
+                <div className="chat-messages">
+                  {messages.length === 0 && (
+                    <div className="chat-welcome">
+                      <p>👋 Hi! I can help you improve your document.</p>
+                      <p>Ask me to modify layouts, improve text, or make any changes to the selected pages.</p>
+                    </div>
+                  )}
+                  {messages.map(message => (
+                    <div key={message.id} className={`chat-message ${message.role} ${message.content.startsWith('✓') ? 'success' : ''}`}>
+                      <div className="message-content">{message.content}</div>
+                      <div className="message-time">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="chat-message assistant loading">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  )}
+                  {error && (
+                    <div className="chat-error">{error}</div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
-            )}
 
-            {activeTab === 'improve-page' && (
-              <div className="page-improvement">
-                <h4>Improve Page Layout</h4>
-                <p className="improve-description">
-                  Enhance the design and layout of the currently selected page (Page {selectedPageIndex + 1}).
-                </p>
-                
-                <textarea
-                  value={pageInstructions}
-                  onChange={(e) => setPageInstructions(e.target.value)}
-                  placeholder="Additional instructions (optional)... e.g., 'Make it more modern', 'Add more spacing', 'Use a color scheme with blue accents'"
-                  rows={3}
-                  className="instructions-input"
-                />
-                
-                <button 
-                  className="improve-page-button"
-                  onClick={async () => {
-                    setIsImprovingPage(true);
-                    setError(null);
-                    
-                    try {
-                      if (!editorCode) {
-                        setError('Editor code is not available. Please ensure the code editor has loaded.');
-                        return;
-                      }
-                      
-                      // Extract the specific page
-                      const pageInfo = extractPageByIndex(editorCode, selectedPageIndex);
-                      if (!pageInfo) {
-                        setError(`Page ${selectedPageIndex + 1} not found in the document.`);
-                        return;
-                      }
-                      
-                      console.log('Extracted page info:', {
-                        pageNumber: selectedPageIndex + 1,
-                        innerContentLength: pageInfo.innerContent.length,
-                        openTag: pageInfo.openTag
-                      });
-                      
-                      // Send only the page inner content to AI
-                      const improvedInnerContent = await geminiService.improveSinglePage(
-                        pageInfo.innerContent,
-                        documentType,
-                        selectedPageIndex + 1,
-                        pageInstructions
-                      );
-                      
-                      console.log('AI returned improved inner content');
-                      
-                      // Replace only this page in the editor code
-                      const updatedCode = replacePageInnerContent(
-                        editorCode,
-                        selectedPageIndex,
-                        improvedInnerContent
-                      );
-                      
-                      // Update the editor code
-                      setEditorCode(updatedCode);
-                      
-                      // Clear instructions after successful improvement
-                      setPageInstructions('');
-                      
-                      console.log('Page improvement applied successfully');
-                    } catch (err) {
-                      setError('Failed to improve page layout. Please try again.');
-                      console.error(err);
-                    } finally {
-                      setIsImprovingPage(false);
-                    }
-                  }}
-                  disabled={isImprovingPage || !isConnected}
-                >
-                  {isImprovingPage ? 'Improving...' : 'Improve Page Layout'}
-                </button>
-                
-                {isImprovingPage && (
-                  <div className="improving-status">
-                    <span className="status-icon authenticating">●</span>
-                    <span>AI is analyzing and improving the page layout...</span>
-                  </div>
-                )}
-              </div>
-            )}
+              {/* Chat Input */}
+              <div className="chat-input-section">
+                <div className="chat-input-container">
+                  <textarea
+                    ref={inputRef}
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask me to improve your document..."
+                    rows={2}
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={isLoading || !inputMessage.trim()}
+                    className="send-button"
+                  >
+                    {isLoading ? '...' : '➤'}
+                  </button>
+                </div>
               </div>
             </>
           )}
