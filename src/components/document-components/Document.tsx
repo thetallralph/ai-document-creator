@@ -6,7 +6,7 @@ export interface DocumentProps {
   title?: string;
   type?: 'flyer' | 'booklet' | 'presentation';
   paperSize?: string; // Key from PAPER_SIZES
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Document: React.FC<DocumentProps> = ({ 
@@ -29,10 +29,11 @@ export const Document: React.FC<DocumentProps> = ({
       {React.Children.map(children, child => {
         // Pass paper size to Page components if they don't have explicit dimensions
         if (React.isValidElement(child) && child.type === Page) {
+          const childProps = child.props as any;
           return React.cloneElement(child, {
             defaultWidth: paper.width,
             defaultHeight: paper.height,
-            ...child.props
+            ...childProps
           });
         }
         return child;

@@ -22,6 +22,7 @@ export class ClaudeAdapter implements LLMService {
       // Note: This will need a proxy in production to avoid exposing the API key
       this.anthropic = new Anthropic({
         apiKey: this.apiKey,
+        // @ts-ignore - dangerouslyAllowBrowser is needed for development
         dangerouslyAllowBrowser: true // Only for development
       });
     }

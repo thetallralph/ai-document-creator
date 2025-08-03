@@ -4,9 +4,6 @@ function styleToString(style?: SerializedStyle): string {
   if (!style || Object.keys(style).length === 0) return '';
   
   const styleEntries = Object.entries(style).map(([key, value]) => {
-    // Convert camelCase to kebab-case for certain properties
-    const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-    
     // Handle numeric values that need 'px'
     if (typeof value === 'number' && !['opacity', 'zIndex', 'fontWeight', 'lineHeight'].includes(key)) {
       return `${key}: ${value}px`;

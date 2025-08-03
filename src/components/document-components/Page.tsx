@@ -7,7 +7,7 @@ export interface PageProps {
   defaultHeight?: number; // From Document component
   background?: string;
   padding?: number | string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Page: React.FC<PageProps> = ({ 

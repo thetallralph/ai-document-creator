@@ -138,7 +138,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       // Build context from selected pages
       let context = '';
       for (const pageIndex of contextPages) {
-        const pageInfo = extractPageByIndex(editorCode, pageIndex);
+        const pageInfo = editorCode ? extractPageByIndex(editorCode, pageIndex) : null;
         if (pageInfo) {
           context += `\n\n--- Page ${pageIndex + 1} ---\n${pageInfo.innerContent}`;
         }
@@ -169,12 +169,14 @@ For styles, ALWAYS use the React inline style syntax: style={{ property: 'value'
       let messageContent = response;
       if (response.includes('<') && response.includes('>')) {
         if (contextPages.length === 1) {
-          const updatedCode = replacePageInnerContent(
+          const updatedCode = editorCode ? replacePageInnerContent(
             editorCode,
             contextPages[0],
             response
-          );
-          setEditorCode(updatedCode);
+          ) : null;
+          if (updatedCode) {
+            setEditorCode(updatedCode);
+          }
           messageContent = `✓ Successfully updated Page ${contextPages[0] + 1}`;
         } else {
           messageContent = `✓ Generated improvements for Pages ${contextPages.map(p => p + 1).join(', ')}. To apply changes, please select a single page.`;

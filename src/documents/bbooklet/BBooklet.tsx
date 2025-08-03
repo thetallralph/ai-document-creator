@@ -949,7 +949,7 @@ export const Bbooklet = () => {
               boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
               borderLeft: '4px solid #805ad5'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginB: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '16px', marginRight: '8px' }}>📈</span>
                 <h3 style={{
                   fontFamily: '"Outfit", sans-serif',

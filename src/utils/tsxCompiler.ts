@@ -103,14 +103,3 @@ export async function parseRealTSX(tsxContent: string): Promise<React.FC | null>
   }
 }
 
-// Parse style objects from TSX code
-function parseStyleObject(styleStr: string): any {
-  try {
-    // Use Function constructor to safely evaluate the style object
-    const styleFunction = new Function('return ' + styleStr);
-    return styleFunction();
-  } catch (error) {
-    console.error('Error parsing style:', error);
-    return {};
-  }
-}

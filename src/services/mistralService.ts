@@ -89,7 +89,8 @@ class MistralService {
         throw new Error('No response from Mistral');
       }
 
-      return response.choices[0].message.content;
+      const content = response.choices[0].message.content;
+      return typeof content === 'string' ? content : JSON.stringify(content);
     } catch (error) {
       console.error('Mistral API error:', error);
       throw error;

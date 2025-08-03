@@ -22,31 +22,34 @@ function serializeReactElement(element: React.ReactElement, id: string = '0'): S
   const { type, props } = element;
   const tagName = typeof type === 'string' ? type : undefined;
   
+  // Type assertion for props
+  const elementProps = props as any;
+  
   const serializedElement: SerializedElement = {
     id,
     type: 'container',
     tagName,
-    style: extractStyleFromProps(props.style)
+    style: extractStyleFromProps(elementProps.style)
   };
   
   // Detect element type based on tag name or props
   if (tagName === 'img') {
     serializedElement.type = 'image';
-    serializedElement.src = props.src;
-    serializedElement.alt = props.alt;
+    serializedElement.src = elementProps.src;
+    serializedElement.alt = elementProps.alt;
   } else if (tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6' || tagName === 'p' || tagName === 'span') {
     serializedElement.type = 'text';
-    if (typeof props.children === 'string') {
-      serializedElement.content = props.children;
+    if (typeof elementProps.children === 'string') {
+      serializedElement.content = elementProps.children;
     }
-  } else if (props.className?.includes('shape') || tagName === 'circle' || tagName === 'rect' || tagName === 'path') {
+  } else if (elementProps.className?.includes('shape') || tagName === 'circle' || tagName === 'rect' || tagName === 'path') {
     serializedElement.type = 'shape';
   }
   
   // Process children
-  if (props.children) {
+  if (elementProps.children) {
     const children: SerializedElement[] = [];
-    React.Children.forEach(props.children, (child, index) => {
+    React.Children.forEach(elementProps.children, (child, index) => {
       if (React.isValidElement(child)) {
         const serializedChild = serializeReactElement(child, `${id}-${index}`);
         if (serializedChild) {
@@ -71,7 +74,10 @@ function serializePage(pageElement: React.ReactElement, index: number): Serializ
   const { props } = pageElement;
   const elements: SerializedElement[] = [];
   
-  React.Children.forEach(props.children, (child, childIndex) => {
+  // Type assertion for props
+  const pageProps = props as any;
+  
+  React.Children.forEach(pageProps.children, (child, childIndex) => {
     if (React.isValidElement(child)) {
       const serializedElement = serializeReactElement(child, `page-${index}-element-${childIndex}`);
       if (serializedElement) {
@@ -82,9 +88,9 @@ function serializePage(pageElement: React.ReactElement, index: number): Serializ
   
   return {
     id: `page-${index}`,
-    background: props.background,
-    padding: props.padding,
-    style: extractStyleFromProps(props.style),
+    background: pageProps.background,
+    padding: pageProps.padding,
+    style: extractStyleFromProps(pageProps.style),
     elements
   };
 }
@@ -97,18 +103,24 @@ export function serializeDocument(component: React.FC): SerializedDocument | nul
     
     // Find the Document component
     let documentElement = rendered;
-    let documentProps = rendered.props;
+    let documentProps: any = rendered.props;
+    
+    // Type assertion for props
+    const renderedProps = rendered.props as any;
     
     // If the rendered element has a data-document-root attribute, use it
-    if (rendered.props && rendered.props['data-document-root'] !== undefined) {
+    if (renderedProps && renderedProps['data-document-root'] !== undefined) {
       documentElement = rendered;
-      documentProps = rendered.props;
-    } else if (rendered.props && rendered.props.children) {
+      documentProps = renderedProps;
+    } else if (renderedProps && renderedProps.children) {
       // Otherwise, look for the Document component in children
-      React.Children.forEach(rendered.props.children, (child) => {
-        if (React.isValidElement(child) && child.props && child.props['data-document-root'] !== undefined) {
-          documentElement = child;
-          documentProps = child.props;
+      React.Children.forEach(renderedProps.children, (child) => {
+        if (React.isValidElement(child)) {
+          const childProps = child.props as any;
+          if (childProps && childProps['data-document-root'] !== undefined) {
+            documentElement = child;
+            documentProps = childProps;
+          }
         }
       });
     }
@@ -120,14 +132,16 @@ export function serializeDocument(component: React.FC): SerializedDocument | nul
     
     // Extract pages
     const pages: SerializedPage[] = [];
-    const children = documentProps.children || documentElement.props.children;
+    const elementProps = documentElement.props as any;
+    const children = documentProps.children || elementProps.children;
     
     React.Children.forEach(children, (child, index) => {
       if (React.isValidElement(child)) {
         // Check if it's a Page component by props or structure
+        const childProps = child.props as any;
         const isPage = (child.type as any).name === 'Page' || 
-                      child.props['data-page'] !== undefined ||
-                      (child.props.background !== undefined && child.props.children);
+                      childProps['data-page'] !== undefined ||
+                      (childProps.background !== undefined && childProps.children);
                       
         if (isPage) {
           pages.push(serializePage(child, index));
