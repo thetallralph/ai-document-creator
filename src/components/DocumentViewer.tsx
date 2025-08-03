@@ -3,7 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { allTemplates } from '../documents/templates';
 import { PAPER_SIZES } from '../config/paperSizes';
 import { preparePrintStyles, cleanupPrintStyles } from '../utils/printUtils';
+import { serializeDocument, downloadTemplate } from '../utils/templateSerializer';
+import { exportTemplateForBabel } from '../utils/templateExporter';
+import { useTemplates } from '../contexts/TemplateContext';
+import { useEditorCode } from '../contexts/EditorCodeContext';
 import PageChecker from './PageChecker';
+import { CodeEditor } from './CodeEditor';
+import { AIAssistant } from './AIAssistant';
+import { getTemplateSource } from '../documents/sourceImports';
+import { getDocumentSource } from '../utils/documentSourceExtractor';
 import './DocumentViewer.css';
 
 interface PageElement {
@@ -15,7 +23,7 @@ interface PageElement {
 }
 
 const DocumentViewer: React.FC = () => {
-  const { documentName } = useParams<{ documentName: string }>();
+  const { documentName, templateId } = useParams<{ documentName?: string; templateId?: string }>();
   const [zoom, setZoom] = useState(75);
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const documentRef = useRef<HTMLDivElement>(null);
@@ -27,12 +35,56 @@ const DocumentViewer: React.FC = () => {
   const [selectedPage, setSelectedPage] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
   const [layersPanelCollapsed, setLayersPanelCollapsed] = useState(false);
+  const [aiPanelCollapsed, setAiPanelCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [editableComponent, setEditableComponent] = useState<React.ComponentType | null>(null);
   const scrollToPageRef = useRef<((pageIndex: number) => void) | null>(null);
+  const { getDynamicTemplate } = useTemplates();
+  const { setEditorCode } = useEditorCode();
   
-  // Find the template by name (URL-friendly)
-  const template = allTemplates.find(
-    t => t.name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '') === documentName
-  );
+  // Find the template - either static or dynamic
+  let template;
+  if (templateId) {
+    const dynamicTemplate = getDynamicTemplate(templateId);
+    template = dynamicTemplate;
+  } else if (documentName) {
+    template = allTemplates.find(
+      t => t.name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '') === documentName
+    );
+  }
+  
+  // Reset editable component when switching documents
+  useEffect(() => {
+    setEditableComponent(null);
+  }, [documentName, templateId]);
+
+  // Load source code when template is available
+  useEffect(() => {
+    const loadSource = async () => {
+      if (!template) {
+        return;
+      }
+      
+      try {
+        // Try to get source from template source first
+        let source = template.name ? getTemplateSource(template.name) : null;
+        
+        // If not found, try to extract from component
+        if (!source && template.component) {
+          const componentName = template.component.name || 'Document';
+          source = await getDocumentSource(componentName);
+        }
+        
+        if (source) {
+          setEditorCode(source);
+        }
+      } catch (error) {
+        console.error('Error loading document source:', error);
+      }
+    };
+
+    loadSource();
+  }, [template, setEditorCode]);
   
   const extractLayers = useCallback((element: Element, depth: number = 0): PageElement[] => {
     const children = Array.from(element.children);
@@ -98,7 +150,7 @@ const DocumentViewer: React.FC = () => {
         };
       });
     }
-  }, [selectedPage, template, extractLayers]);
+  }, [selectedPage, template, editableComponent, extractLayers]);
   
   // Handle scroll to detect visible page
   useEffect(() => {
@@ -166,7 +218,7 @@ const DocumentViewer: React.FC = () => {
     return (
       <div className="document-viewer-error">
         <h2>Document not found</h2>
-        <p>The document "{documentName}" could not be found.</p>
+        <p>The document "{documentName || templateId}" could not be found.</p>
         <Link to="/">← Back to documents</Link>
       </div>
     );
@@ -211,13 +263,30 @@ const DocumentViewer: React.FC = () => {
       {/* Top Toolbar */}
       <div className="viewer-toolbar">
         <Link to="/" className="back-button">← Documents</Link>
-        <div className="document-title">{template.name}</div>
+        <div className="document-title">
+          {template.name}
+        </div>
         <div className="toolbar-controls">
           <div className="zoom-controls">
             <button onClick={() => setZoom(Math.max(25, zoom - 25))}>−</button>
             <span className="zoom-level">{zoom}%</span>
             <button onClick={() => setZoom(Math.min(200, zoom + 25))}>+</button>
           </div>
+          <button
+            className={`view-mode-button ${viewMode === 'visual' ? 'active' : ''}`}
+            onClick={() => setViewMode('visual')}
+            title="Visual View"
+          >
+            👁️ Visual
+          </button>
+          <button
+            className={`view-mode-button ${viewMode === 'code' ? 'active' : ''}`}
+            onClick={() => setViewMode('code')}
+            title="Code View"
+          >
+            {"</>"} Code
+          </button>
+          <div className="toolbar-separator" />
           <button 
             className="print-button"
             onClick={() => {
@@ -247,6 +316,44 @@ const DocumentViewer: React.FC = () => {
             title="Print Document"
           >
             🖨️ Print
+          </button>
+          <button 
+            className="export-button"
+            onClick={() => {
+              const serialized = serializeDocument(Component);
+              if (serialized) {
+                downloadTemplate(serialized);
+              } else {
+                alert('Failed to export template');
+              }
+            }}
+            title="Export Template as JSON"
+          >
+            💾 Export JSON
+          </button>
+          <button 
+            className="export-button"
+            onClick={() => {
+              // Export template in Babel-compatible format
+              const exportedCode = exportTemplateForBabel(template.name, Component);
+              
+              if (exportedCode) {
+                const blob = new Blob([exportedCode], { type: 'text/typescript' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${template.name.replace(/\s+/g, '-').toLowerCase()}.tsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } else {
+                alert('Failed to export template');
+              }
+            }}
+            title="Export Template as TSX (Original Source)"
+          >
+            📄 Export TSX
           </button>
         </div>
       </div>
@@ -307,20 +414,64 @@ const DocumentViewer: React.FC = () => {
               ))}
             </div>
           </div>
+          
+          {/* Page Checker Panel */}
+          <PageChecker 
+            pageElement={pages[selectedPage] || null}
+            paperSize={documentInfo?.paperSize}
+            pageIndex={selectedPage}
+          />
         </div>
         
-        {/* Center - Document Canvas */}
+        {/* Center - Document Canvas or Code Editor */}
         <div className="viewer-canvas">
-          <div className="canvas-container" ref={canvasRef}>
-            <div 
-              className="document-wrapper"
-              style={{ transform: `scale(${zoom / 100})` }}
-              ref={documentRef}
-            >
-              <div className="document-shadow continuous-scroll" data-focus-mode={focusMode} data-selected-page={selectedPage}>
-                <Component />
+          {/* Always render both views but only show the active one */}
+          <div style={{ display: viewMode === 'visual' ? 'block' : 'none', height: '100%' }}>
+            <div className="canvas-container" ref={canvasRef}>
+              <div 
+                className="document-wrapper"
+                style={{ transform: `scale(${zoom / 100})` }}
+                ref={documentRef}
+              >
+                <div className="document-shadow continuous-scroll" data-focus-mode={focusMode} data-selected-page={selectedPage}>
+                  {(() => {
+                    if (editableComponent) {
+                      console.log('Using edited component');
+                      console.log('editableComponent type:', typeof editableComponent);
+                      console.log('editableComponent:', editableComponent);
+                      
+                      // If it's already a React element, just return it
+                      if (editableComponent && typeof editableComponent === 'object' && editableComponent.$$typeof) {
+                        console.log('editableComponent is already a React element!');
+                        return editableComponent;
+                      }
+                      
+                      // Otherwise, render it as a component
+                      const EditedComponent = editableComponent;
+                      return <EditedComponent />;
+                    } else {
+                      console.log('Using original component');
+                      return <Component />;
+                    }
+                  })()}
+                </div>
               </div>
             </div>
+          </div>
+          
+          <div style={{ display: viewMode === 'code' ? 'block' : 'none', height: '100%' }}>
+            <CodeEditor 
+              documentComponent={Component}
+              documentName={template.component.name}
+              onCodeChange={(updatedComponent) => {
+                console.log('onCodeChange received:', updatedComponent);
+                console.log('Type:', typeof updatedComponent);
+                setEditableComponent(updatedComponent);
+              }}
+              onCodeUpdate={(code) => {
+                setEditorCode(code);
+              }}
+            />
           </div>
           
           {/* Page Navigation */}
@@ -387,11 +538,13 @@ const DocumentViewer: React.FC = () => {
             )}
           </div>
           
-          {/* Page Checker Panel */}
-          <PageChecker 
-            pageElement={pages[selectedPage] || null}
-            paperSize={documentInfo?.paperSize}
-            pageIndex={selectedPage}
+          {/* AI Assistant Panel */}
+          <AIAssistant 
+            documentContent={documentRef.current?.innerHTML || ''}
+            documentType={template?.type || 'document'}
+            collapsed={aiPanelCollapsed}
+            onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}
+            selectedPageIndex={selectedPage}
           />
         </div>
       </div>

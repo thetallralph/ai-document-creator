@@ -4,6 +4,17 @@
   padding: 40px 20px;
 }
 
+.document-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+}
+
+.document-list-header > div {
+  flex: 1;
+}
+
 .document-list h1 {
   text-align: center;
   color: #2c3e50;
@@ -14,7 +25,41 @@
   text-align: center;
   color: #7f8c8d;
   font-size: 18px;
-  margin-bottom: 40px;
+  margin-bottom: 0;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.import-button,
+.generate-button {
+  background: #0078d4;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.import-button:hover,
+.generate-button:hover {
+  background: #106ebe;
+}
+
+.generate-button {
+  background: #28a745;
+}
+
+.generate-button:hover {
+  background: #218838;
 }
 
 .templates-grid {
@@ -33,6 +78,23 @@
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.template-card.dynamic {
+  border: 2px solid #0078d4;
+}
+
+.template-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #0078d4;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .template-card:hover {

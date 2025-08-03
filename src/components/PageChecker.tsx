@@ -20,8 +20,25 @@ const PageChecker: React.FC<PageCheckerProps> = ({ pageElement, paperSize }) => 
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // Helper functions defined outside component or as stable references
+  const parseRgb = useCallback((color: string): number[] | null => {
+    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+    return null;
+  }, []);
+
+  const relativeLuminance = useCallback((rgb: number[]): number => {
+    const [r, g, b] = rgb.map(val => {
+      const sRGB = val / 255;
+      return sRGB <= 0.03928 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }, []);
+
   // Calculate contrast ratio between two colors
-  const calculateContrast = (color1: string, color2: string): number => {
+  const calculateContrast = useCallback((color1: string, color2: string): number => {
     const rgb1 = parseRgb(color1);
     const rgb2 = parseRgb(color2);
     
@@ -31,23 +48,7 @@ const PageChecker: React.FC<PageCheckerProps> = ({ pageElement, paperSize }) => 
     const l2 = relativeLuminance(rgb2);
     
     return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-  };
-
-  const parseRgb = (color: string): number[] | null => {
-    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    if (match) {
-      return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
-    }
-    return null;
-  };
-
-  const relativeLuminance = (rgb: number[]): number => {
-    const [r, g, b] = rgb.map(val => {
-      const sRGB = val / 255;
-      return sRGB <= 0.03928 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  };
+  }, [parseRgb, relativeLuminance]);
 
   const runChecks = useCallback(() => {
     if (!pageElement) return;

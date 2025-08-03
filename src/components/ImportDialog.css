@@ -1,0 +1,185 @@
+.import-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.import-dialog {
+  background: #2a2a2a;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: #e0e0e0;
+}
+
+.import-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #404040;
+}
+
+.import-dialog-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: #404040;
+  color: #ffffff;
+}
+
+.import-tabs {
+  display: flex;
+  border-bottom: 1px solid #404040;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: #e0e0e0;
+}
+
+.tab.active {
+  color: #ffffff;
+  border-bottom-color: #0078d4;
+}
+
+.import-dialog-content {
+  padding: 20px;
+}
+
+.tsx-input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  color: #e0e0e0;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  resize: vertical;
+  margin: 16px 0;
+}
+
+.tsx-input:focus {
+  outline: none;
+  border-color: #0078d4;
+}
+
+.tsx-input::placeholder {
+  color: #666;
+}
+
+.file-select-button {
+  background: #0078d4;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 16px 0;
+  transition: background 0.2s;
+}
+
+.file-select-button:hover:not(:disabled) {
+  background: #106ebe;
+}
+
+.file-select-button:disabled {
+  background: #404040;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.error-message {
+  background: #dc3545;
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.import-info {
+  margin-top: 20px;
+  padding: 16px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #999;
+}
+
+.import-info p {
+  margin: 0 0 8px 0;
+}
+
+.import-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.import-info li {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.import-dialog-footer {
+  padding: 20px;
+  border-top: 1px solid #404040;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-button {
+  background: #404040;
+  color: #e0e0e0;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.cancel-button:hover {
+  background: #505050;
+}
