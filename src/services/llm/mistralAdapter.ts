@@ -3,11 +3,9 @@ import { mistralService } from '../mistralService';
 
 export class MistralAdapter implements LLMService {
   private apiKey: string | undefined;
-  private model: string;
 
-  constructor(apiKey?: string, model?: string) {
+  constructor(apiKey?: string, _model?: string) {
     this.apiKey = apiKey || import.meta.env.VITE_MISTRAL_API_KEY;
-    this.model = model || import.meta.env.VITE_LLM_MODEL || 'mistral-small-latest';
   }
 
   isConfigured(): boolean {
@@ -112,7 +110,7 @@ export class MistralAdapter implements LLMService {
 
   async improveSinglePage(
     pageInnerContent: string, 
-    documentType: string, 
+    _documentType: string, 
     pageNumber: number, 
     additionalInstructions?: string
   ): Promise<string> {

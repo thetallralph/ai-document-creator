@@ -10,7 +10,7 @@ export function registerTemplateSource(name: string, source: string) {
 
 // We'll populate this dynamically or through a build process
 // For now, let's add a method to fetch source at runtime
-export async function fetchTemplateSource(templatePath: string): Promise<string | null> {
+export async function fetchTemplateSource(_templatePath: string): Promise<string | null> {
   try {
     // In a real app, this would be handled by the build system
     // For now, we'll return a placeholder

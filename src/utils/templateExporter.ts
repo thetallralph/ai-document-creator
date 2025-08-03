@@ -183,7 +183,7 @@ export function createTemplateSource(
   paperSize: string,
   pages: Array<{ background?: string; padding?: string; content: string }>
 ): string {
-  const pagesCode = pages.map((page, index) => {
+  const pagesCode = pages.map((page) => {
     const props = [];
     if (page.background) props.push(`background="${page.background}"`);
     if (page.padding) props.push(`padding="${page.padding}"`);

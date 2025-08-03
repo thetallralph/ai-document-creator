@@ -14,7 +14,7 @@ interface LLMResponse {
  * @param prompt The formatted prompt for the LLM
  * @returns The generated TSX code
  */
-export async function generateTemplateWithLLM(prompt: string): Promise<LLMResponse> {
+export async function generateTemplateWithLLM(_prompt: string): Promise<LLMResponse> {
   // Example integration with OpenAI API
   // Replace with your actual implementation
   

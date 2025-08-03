@@ -29,7 +29,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
   const lastUserCodeRef = useRef<string>('');
   
   // Debounce timer ref
-  const debounceTimer = useRef<NodeJS.Timeout>();
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   
   // Ref to track previous editor code for change detection
   const previousEditorCodeRef = useRef<string | null>(null);

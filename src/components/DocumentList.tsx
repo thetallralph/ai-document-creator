@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { allTemplates } from '../documents/templates';
 import { useTemplates } from '../contexts/TemplateContext';
 import DocumentCreator from './DocumentCreator';
@@ -10,7 +10,6 @@ const DocumentList: React.FC = () => {
   const [selectedType, setSelectedType] = useState('flyer');
   const [showCreator, setShowCreator] = useState(false);
   const { dynamicTemplates } = useTemplates();
-  const navigate = useNavigate();
   
   const getUrlName = (name: string) => {
     return name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '');

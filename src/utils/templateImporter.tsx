@@ -17,49 +17,6 @@ function parseStyleObject(styleStr: string): Record<string, any> {
   }
 }
 
-// Parse JSX and create React elements
-function parseJSX(jsx: string): React.ReactElement | null {
-  try {
-    // Remove whitespace and newlines for easier parsing
-    const normalized = jsx.trim();
-    
-    // Create a function that builds the JSX structure
-    const jsxBuilder = new Function(
-      'React',
-      'Document',
-      'Page',
-      `
-      "use strict";
-      
-      // Helper to create elements with proper style handling
-      const h = (type, props, ...children) => {
-        if (props && props.style && typeof props.style === 'string') {
-          props.style = ${parseStyleObject.toString()}(props.style);
-        }
-        return React.createElement(type, props, ...children);
-      };
-      
-      // Replace JSX with function calls
-      const jsx = ${JSON.stringify(normalized)};
-      
-      // This is a simplified approach - in production, use a proper JSX parser
-      // For now, we'll use React.createElement directly
-      
-      // Parse the structure and create elements
-      const createComponent = () => {
-        ${generateCreateElementCode(normalized)}
-      };
-      
-      return createComponent();
-      `
-    );
-    
-    return jsxBuilder(React, Document, Page);
-  } catch (error) {
-    console.error('Error parsing JSX:', error);
-    return null;
-  }
-}
 
 // Generate React.createElement code from JSX string
 function generateCreateElementCode(jsx: string): string {

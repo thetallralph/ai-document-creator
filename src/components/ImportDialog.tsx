@@ -48,11 +48,13 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose }) => {
         
         if (component) {
           const name = file.name.replace('.tsx', '').replace(/-/g, ' ');
-          const id = addDynamicTemplate(
+          const id = addDynamicTemplate({
+            id: `imported-${Date.now()}`,
             name,
-            'Imported TSX template',
+            description: 'Imported TSX template',
+            code: content,
             component
-          );
+          });
           navigate(`/dynamic/${id}`);
           onClose();
         } else {
@@ -60,14 +62,17 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose }) => {
         }
       } else {
         // Handle JSON file
+        const fileContent = await file.text();
         const component = await importTemplateFromFile(file);
         if (component) {
           const name = file.name.replace('.json', '').replace(/-/g, ' ');
-          const id = addDynamicTemplate(
+          const id = addDynamicTemplate({
+            id: `imported-${Date.now()}`,
             name,
-            'Imported template',
+            description: 'Imported template',
+            code: fileContent,
             component
-          );
+          });
           navigate(`/dynamic/${id}`);
           onClose();
         } else {
@@ -107,11 +112,13 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ isOpen, onClose }) => {
       }
       
       if (component) {
-        const id = addDynamicTemplate(
-          'Imported TSX Template',
-          'Template imported from TSX code',
+        const id = addDynamicTemplate({
+          id: `imported-${Date.now()}`,
+          name: 'Imported TSX Template',
+          description: 'Template imported from TSX code',
+          code: tsxContent,
           component
-        );
+        });
         navigate(`/dynamic/${id}`);
         onClose();
       } else {

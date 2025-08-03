@@ -29,12 +29,10 @@ const DocumentViewer: React.FC = () => {
   const documentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<HTMLElement[]>([]);
-  const [layers, setLayers] = useState<PageElement[]>([]);
   const [documentInfo, setDocumentInfo] = useState<{ paperSize?: string; width?: number; height?: number }>();
   const [visiblePage, setVisiblePage] = useState(0);
   const [selectedPage, setSelectedPage] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
-  const [layersPanelCollapsed, setLayersPanelCollapsed] = useState(false);
   const [aiPanelCollapsed, setAiPanelCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
   const [editableComponent, setEditableComponent] = useState<React.ComponentType | null>(null);
@@ -145,10 +143,11 @@ const DocumentViewer: React.FC = () => {
       }
       
       // Extract layers from selected page
-      if (pageElements[selectedPage]) {
-        const extractedLayers = extractLayers(pageElements[selectedPage], 0);
-        setLayers(extractedLayers);
-      }
+      // Layers functionality is currently disabled
+      // if (pageElements[selectedPage]) {
+      //   const extractedLayers = extractLayers(pageElements[selectedPage], 0);
+      //   setLayers(extractedLayers);
+      // }
       
       // Add click handlers to pages
       pageElements.forEach((page, index) => {
@@ -470,9 +469,9 @@ const DocumentViewer: React.FC = () => {
                       console.log('editableComponent:', editableComponent);
                       
                       // If it's already a React element, just return it
-                      if (editableComponent && typeof editableComponent === 'object' && editableComponent.$$typeof) {
+                      if (editableComponent && typeof editableComponent === 'object' && (editableComponent as any).$$typeof) {
                         console.log('editableComponent is already a React element!');
-                        return editableComponent;
+                        return editableComponent as React.ReactElement;
                       }
                       
                       // Otherwise, render it as a component
@@ -554,7 +553,6 @@ const DocumentViewer: React.FC = () => {
         <div className="sidebar sidebar-right">
           {/* AI Assistant Panel */}
           <AIAssistant 
-            documentContent={documentRef.current?.innerHTML || ''}
             documentType={template?.type || 'document'}
             collapsed={aiPanelCollapsed}
             onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}

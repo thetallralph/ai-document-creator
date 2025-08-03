@@ -9,7 +9,7 @@ export function createUpdatedComponent(
   originalSource: string,
   improvedPageCode: string,
   pageIndex: number,
-  templateName?: string
+  _templateName?: string
 ): React.FC | null {
   try {
     // First, we need to replace the specific page in the original source
@@ -66,14 +66,6 @@ export function createUpdatedComponent(
         improvedPageCode + 
         originalSource.substring(end);
       
-      // Extract style-related code from original source
-      const hasStyles = originalSource.includes('const styles =');
-      const stylesMatch = originalSource.match(/const\s+styles\s*=\s*([^;]+);/);
-      
-      // Extract all imports from original source
-      const importMatches = originalSource.match(/import\s+[\s\S]*?from\s+['"][^'"]+['"]/g) || [];
-      const hasStyleImports = importMatches.some(imp => imp.includes('styles'));
-      
       // Extract the component function body
       const componentMatch = updatedSource.match(/return\s*\(([\s\S]*)\);?\s*}/);
       if (!componentMatch) {
@@ -83,12 +75,6 @@ export function createUpdatedComponent(
       
       const jsxContent = componentMatch[1];
       
-      // Transform the JSX using Babel
-      const transformedCode = Babel.transform(jsxContent, {
-        presets: ['react'],
-        plugins: []
-      }).code;
-      
       // If the improved code still contains style references, we need to replace them
       let processedJsxContent = jsxContent;
       
@@ -96,15 +82,6 @@ export function createUpdatedComponent(
       if (jsxContent.includes('styles.') || jsxContent.includes('styles[')) {
         console.log('Detected styles references in improved code, replacing with inline values...');
         console.log('Sample of code before replacement:', jsxContent.substring(0, 200));
-        
-        // Extract actual style values from original source if possible
-        const styleValues: Record<string, any> = {
-          'colors.primary': '#667eea',
-          'colors.secondary': '#764ba2',
-          'colors.accent': '#f39c12',
-          'colors.background': '#fafafa',
-          'colors.text': '#333333'
-        };
         
         // Replace style references with actual values
         processedJsxContent = processedJsxContent
@@ -131,7 +108,7 @@ export function createUpdatedComponent(
           .replace(/styles\[['"]\w+['"]\]/g, '{}');
           
         // Also handle styles within JSX expressions like {styles.colors.green}
-        processedJsxContent = processedJsxContent.replace(/\{(styles\.colors\.\w+)\}/g, (match, styleRef) => {
+        processedJsxContent = processedJsxContent.replace(/\{(styles\.colors\.\w+)\}/g, (_match, styleRef) => {
           const colorMap: Record<string, string> = {
             'styles.colors.primary': '#667eea',
             'styles.colors.secondary': '#764ba2',

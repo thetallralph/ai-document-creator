@@ -58,11 +58,13 @@ const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({ isOpen, onClose }
     }
 
     if (component) {
-      const id = addDynamicTemplate(
-        'AI Generated Template',
-        `Generated from: ${description}`,
+      const id = addDynamicTemplate({
+        id: `ai-generated-${Date.now()}`,
+        name: 'AI Generated Template',
+        description: `Generated from: ${description}`,
+        code: generatedCode,
         component
-      );
+      });
       navigate(`/dynamic/${id}`);
       onClose();
     }

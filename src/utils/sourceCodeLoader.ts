@@ -1,14 +1,10 @@
 // Dynamic source code loader that fetches actual document source files
 // In a real application, this would make HTTP requests to fetch the source
 
-import { CactuceBooklet } from '../documents/cactuce-booklet/CactuceBooklet';
-import { GreenRooftopBusinessPlan } from '../documents/green-rooftop-business-plan/GreenRooftopBusinessPlan';
 import { inlineStyles, getStyleNameForComponent } from './styleInliner';
 
 // Import raw source files as text
-// @ts-expect-error - Vite raw import
 import CactuceBookletSource from '../documents/cactuce-booklet/CactuceBooklet.tsx?raw';
-// @ts-expect-error - Vite raw import
 import GreenRooftopBusinessPlanSource from '../documents/green-rooftop-business-plan/GreenRooftopBusinessPlan.tsx?raw';
 
 // Map component names to their raw source code

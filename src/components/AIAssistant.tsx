@@ -13,20 +13,14 @@ interface Message {
 }
 
 interface AIAssistantProps {
-  documentContent: string;
   documentType: string;
-  selectedElement?: { type: string; content: string; id: string };
-  onSuggestionApply?: (suggestion: string) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   selectedPageIndex?: number;
 }
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
-  documentContent,
   documentType,
-  selectedElement,
-  onSuggestionApply,
   collapsed = false,
   onToggleCollapse,
   selectedPageIndex = 0
@@ -143,19 +137,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           context += `\n\n--- Page ${pageIndex + 1} ---\n${pageInfo.innerContent}`;
         }
       }
-
-      // Create prompt with context
-      const prompt = `You are helping improve a document. Here is the current content of the selected page(s):
-
-${context}
-
-User request: ${message}
-
-If the user asks to modify the page, provide ONLY the improved inner content of the Page component without any wrapper.
-Do NOT include <Page> tags or any imports.
-Return ONLY the JSX content that goes inside the Page component.
-
-For styles, ALWAYS use the React inline style syntax: style={{ property: 'value' }}`;
 
       // Get response from LLM
       const response = await llmService.improveSinglePage(
