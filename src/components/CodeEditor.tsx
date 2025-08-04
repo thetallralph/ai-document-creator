@@ -56,7 +56,20 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
       
       // Extract the component name from the code
       const componentNameMatch = value.match(/export\s+(?:const|function)\s+(\w+)/);
-      const componentName = componentNameMatch ? componentNameMatch[1] : 'EditableDocument';
+      let componentName = componentNameMatch ? componentNameMatch[1] : 'EditableDocument';
+      
+      // If the original code has an invalid component name (with spaces), fix it
+      const invalidNameMatch = value.match(/export\s+(?:const|function)\s+([^=]+?)\s*=/);
+      if (invalidNameMatch && invalidNameMatch[1].includes(' ')) {
+        const originalName = invalidNameMatch[1].trim();
+        const sanitizedName = originalName.replace(/\s+/g, '');
+        componentName = sanitizedName;
+        // Replace the invalid name with the sanitized one in the code
+        value = value.replace(
+          new RegExp(`export\\s+(const|function)\\s+${originalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`),
+          `export $1 ${sanitizedName} =`
+        );
+      }
       
       // Simple approach: just remove imports and transform
       const codeToTransform = value
