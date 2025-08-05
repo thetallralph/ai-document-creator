@@ -91,6 +91,12 @@ export class MistralAdapter implements LLMService {
 
   async generateContent(prompt: string, context: string): Promise<string> {
     try {
+      // Check if this is for HTML editing
+      if (context === 'html-editing') {
+        return await mistralService.generateHTMLContent(prompt);
+      }
+      
+      // For other contexts, use the regular text improvement
       const fullPrompt = `Context: ${context}\n\n${prompt}`;
       return await mistralService.improveText(fullPrompt, 'clarity');
     } catch (error) {

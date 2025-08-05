@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getLLMService, LLMFactory } from '../services/llm';
 import { useEditorCode } from '../contexts/EditorCodeContext';
-import { extractPageByIndex, replacePageInnerContent, extractAllPages } from '../utils/pageExtractor';
+import { replacePageInnerContent, extractAllPages } from '../utils/pageExtractor';
+import { extractAllPagesWithAST, replacePageInnerContentWithAST } from '../utils/astPageExtractor';
 import { APIKeyWarning } from './APIKeyWarning';
 import './AIAssistant.css';
 
@@ -17,13 +18,15 @@ interface AIAssistantProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   selectedPageIndex?: number;
+  totalPages?: number;
 }
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   documentType,
   collapsed = false,
   onToggleCollapse,
-  selectedPageIndex = 0
+  selectedPageIndex = 0,
+  totalPages: totalPagesProp = 1
 }) => {
   const { editorCode, setEditorCode } = useEditorCode();
   const [isConnected, setIsConnected] = useState(false);
@@ -38,20 +41,25 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const [contextPages, setContextPages] = useState<number[]>([selectedPageIndex]);
   const [totalPages, setTotalPages] = useState(1);
   
+  // @ mention state
+  const [showPageMention, setShowPageMention] = useState(false);
+  const [mentionPosition, setMentionPosition] = useState({ bottom: 0, left: 0, width: 0 });
+  const [mentionFilter, setMentionFilter] = useState('');
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mentionRef = useRef<HTMLDivElement>(null);
 
   const llmService = getLLMService();
   const isConfigured = llmService.isConfigured();
   const currentProvider = LLMFactory.getCurrentProvider() || 'gemini';
 
-  // Update total pages when editor code changes
+  // Use the totalPages from props (which comes from DOM query) instead of parsing source
   useEffect(() => {
-    if (editorCode) {
-      const pages = extractAllPages(editorCode);
-      setTotalPages(pages.length);
-    }
-  }, [editorCode]);
+    setTotalPages(totalPagesProp);
+    console.log('[AI Assistant] Total pages from DOM:', totalPagesProp);
+  }, [totalPagesProp]);
 
   // Update context when selected page changes
   useEffect(() => {
@@ -59,6 +67,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       setContextPages([selectedPageIndex]);
     }
   }, [selectedPageIndex]);
+
+  // Handle click outside of mention dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showPageMention && 
+          mentionRef.current && 
+          !mentionRef.current.contains(event.target as Node) &&
+          inputRef.current &&
+          !inputRef.current.contains(event.target as Node)) {
+        setShowPageMention(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPageMention]);
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -131,8 +155,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     try {
       // Build context from selected pages
       let context = '';
+      // Use AST parser to get all pages first
+      const allPages = editorCode ? extractAllPagesWithAST(editorCode) : [];
+      const fallbackPages = allPages.length === 0 && editorCode ? extractAllPages(editorCode) : [];
+      const pages = allPages.length > 0 ? allPages : fallbackPages;
+      
       for (const pageIndex of contextPages) {
-        const pageInfo = editorCode ? extractPageByIndex(editorCode, pageIndex) : null;
+        const pageInfo = pages[pageIndex];
         if (pageInfo) {
           context += `\n\n--- Page ${pageIndex + 1} ---\n${pageInfo.innerContent}`;
         }
@@ -149,7 +178,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       // Auto-apply if it looks like JSX content
       let messageContent = response;
       if (response.includes('<') && response.includes('>')) {
-        if (contextPages.length === 1) {
+        // With single page selection, we should always have exactly one page
+        try {
+          // Try AST-based replacement first
+          const updatedCode = editorCode ? replacePageInnerContentWithAST(
+            editorCode,
+            contextPages[0],
+            response
+          ) : null;
+          if (updatedCode) {
+            setEditorCode(updatedCode);
+            messageContent = `✓ Successfully updated Page ${contextPages[0] + 1}`;
+          }
+        } catch (astError) {
+          console.log('[AI Assistant] AST replacement failed, trying regex:', astError);
+          // Fallback to regex-based replacement
           const updatedCode = editorCode ? replacePageInnerContent(
             editorCode,
             contextPages[0],
@@ -157,10 +200,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           ) : null;
           if (updatedCode) {
             setEditorCode(updatedCode);
+            messageContent = `✓ Successfully updated Page ${contextPages[0] + 1}`;
           }
-          messageContent = `✓ Successfully updated Page ${contextPages[0] + 1}`;
-        } else {
-          messageContent = `✓ Generated improvements for Pages ${contextPages.map(p => p + 1).join(', ')}. To apply changes, please select a single page.`;
         }
       }
 
@@ -182,22 +223,104 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (showPageMention) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => 
+          prev < getFilteredPages().length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => prev > 0 ? prev - 1 : 0);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const filteredPages = getFilteredPages();
+        if (filteredPages.length > 0) {
+          selectPageFromMention(filteredPages[selectedMentionIndex]);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowPageMention(false);
+      }
+    } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
   const togglePageInContext = (pageIndex: number) => {
-    setContextPages(prev => {
-      if (prev.includes(pageIndex)) {
-        // Don't remove if it's the only page
-        if (prev.length === 1) return prev;
-        return prev.filter(p => p !== pageIndex);
+    // Single page selection only - clicking a page makes it the only selected page
+    setContextPages([pageIndex]);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setInputMessage(value);
+    
+    // Check for @ mention
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1 && lastAtIndex === textBeforeCursor.length - 1) {
+      // Just typed @, show mention dropdown
+      const textarea = e.target;
+      const textareaRect = textarea.getBoundingClientRect();
+      const inputSection = textarea.closest('.chat-input-section');
+      const inputSectionRect = inputSection?.getBoundingClientRect();
+      
+      // Calculate position to show just above the input section
+      setMentionPosition({
+        bottom: window.innerHeight - (inputSectionRect?.top || textareaRect.top) + 10,
+        left: textareaRect.left,
+        width: textareaRect.width
+      });
+      setShowPageMention(true);
+      setMentionFilter('');
+      setSelectedMentionIndex(0);
+    } else if (lastAtIndex !== -1 && showPageMention) {
+      // Check if we're still in a mention context
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      if (textAfterAt.match(/^[0-9]*$/)) {
+        setMentionFilter(textAfterAt);
       } else {
-        return [...prev, pageIndex].sort((a, b) => a - b);
+        setShowPageMention(false);
       }
-    });
+    } else {
+      setShowPageMention(false);
+    }
+  };
+
+  const getFilteredPages = () => {
+    const pages = Array.from({ length: totalPages }, (_, i) => i);
+    if (!mentionFilter) return pages;
+    
+    const filterNum = parseInt(mentionFilter);
+    if (!isNaN(filterNum)) {
+      return pages.filter(p => (p + 1).toString().startsWith(mentionFilter));
+    }
+    return pages;
+  };
+
+  const selectPageFromMention = (pageIndex: number) => {
+    // Single page selection - selecting from mention sets it as the only context page
+    setContextPages([pageIndex]);
+    
+    // Replace the @mention with the page reference
+    const cursorPosition = inputRef.current?.selectionStart || 0;
+    const textBeforeCursor = inputMessage.substring(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      const newMessage = 
+        inputMessage.substring(0, lastAtIndex) + 
+        `@page${pageIndex + 1} ` +
+        inputMessage.substring(cursorPosition);
+      setInputMessage(newMessage);
+    }
+    
+    setShowPageMention(false);
+    inputRef.current?.focus();
   };
 
 
@@ -283,7 +406,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     ))}
                   </div>
                   <p className="context-info">
-                    Selected: {contextPages.map(p => p + 1).join(', ')} | Current: Page {selectedPageIndex + 1}
+                    Editing: Page {contextPages.length > 0 ? contextPages[0] + 1 : selectedPageIndex + 1} | Viewing: Page {selectedPageIndex + 1}
                   </p>
                 </div>
 
@@ -325,9 +448,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   <textarea
                     ref={inputRef}
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask me to improve your document..."
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Ask me to improve your document... (use @ to select pages)"
                     rows={2}
                     disabled={isLoading}
                   />
@@ -340,6 +463,40 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   </button>
                 </div>
               </div>
+              
+              {/* Page Mention Dropdown */}
+              {showPageMention && (
+                <div 
+                  ref={mentionRef}
+                  className="page-mention-dropdown"
+                  style={{
+                    position: 'fixed',
+                    bottom: mentionPosition.bottom,
+                    left: mentionPosition.left,
+                    width: mentionPosition.width || 300,
+                    maxWidth: '90vw',
+                    zIndex: 1000
+                  }}
+                >
+                  <div className="page-mention-header">
+                    Select page to add to context
+                  </div>
+                  <div className="page-mention-list">
+                    {getFilteredPages().map((pageIndex, index) => (
+                      <div
+                        key={pageIndex}
+                        className={`page-mention-item ${index === selectedMentionIndex ? 'selected' : ''} ${contextPages.includes(pageIndex) ? 'in-context' : ''}`}
+                        onClick={() => selectPageFromMention(pageIndex)}
+                        onMouseEnter={() => setSelectedMentionIndex(index)}
+                      >
+                        <span className="page-mention-number">Page {pageIndex + 1}</span>
+                        {pageIndex === selectedPageIndex && <span className="page-mention-current">👁️</span>}
+                        {contextPages.includes(pageIndex) && <span className="page-mention-selected">✓</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

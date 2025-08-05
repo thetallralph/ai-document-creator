@@ -1,0 +1,1 @@
+export { OutletCatalog } from './OutletCatalog';

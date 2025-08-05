@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { allTemplates } from '../documents/templates';
+import { htmlTemplateService } from '../services/htmlTemplateService';
+import { registerBuiltInHTMLTemplates } from '../templates/html-templates';
 import { useTemplates } from '../contexts/TemplateContext';
 import DocumentCreator from './DocumentCreator';
+import { ProfileButton } from './ProfileButton';
 import './DocumentList.css';
+
+// Register HTML templates
+registerBuiltInHTMLTemplates();
 
 const DocumentList: React.FC = () => {
   const [newDocumentName, setNewDocumentName] = useState('');
@@ -11,8 +16,22 @@ const DocumentList: React.FC = () => {
   const [showCreator, setShowCreator] = useState(false);
   const { dynamicTemplates } = useTemplates();
   
-  const getUrlName = (name: string) => {
-    return name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '');
+  // Get HTML templates
+  const htmlTemplates = htmlTemplateService.getAllTemplateMetadata();
+  
+  // const getUrlName = (name: string) => {
+  //   return name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '');
+  // };
+
+  const getTemplateIcon = (name: string) => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('flyer')) return '📄';
+    if (lowerName.includes('presentation') || lowerName.includes('plan')) return '📊';
+    if (lowerName.includes('catalog')) return '📚';
+    if (lowerName.includes('booklet')) return '📖';
+    if (lowerName.includes('poster')) return '🖼️';
+    if (lowerName.includes('brochure')) return '📋';
+    return '📄'; // default icon
   };
 
   const handleCreateDocument = () => {
@@ -23,10 +42,10 @@ const DocumentList: React.FC = () => {
 
   // Categorize templates
   const categorizedTemplates = {
-    flyers: allTemplates.filter(t => t.name.toLowerCase().includes('flyer')),
-    presentations: allTemplates.filter(t => t.name.toLowerCase().includes('presentation') || t.name.toLowerCase().includes('plan')),
-    catalogs: allTemplates.filter(t => t.name.toLowerCase().includes('catalog')),
-    booklets: allTemplates.filter(t => t.name.toLowerCase().includes('booklet')),
+    flyers: htmlTemplates.filter(t => t.name.toLowerCase().includes('flyer')),
+    presentations: htmlTemplates.filter(t => t.name.toLowerCase().includes('presentation') || t.name.toLowerCase().includes('plan')),
+    catalogs: htmlTemplates.filter(t => t.name.toLowerCase().includes('catalog')),
+    booklets: htmlTemplates.filter(t => t.name.toLowerCase().includes('booklet')),
   };
 
   const documentTypes = [
@@ -40,9 +59,11 @@ const DocumentList: React.FC = () => {
 
   return (
     <div className="document-list">
+      <ProfileButton className="absolute-top-right" />
+
       {/* Hero Section with Create Form */}
       <div className="hero-section">
-        <h1>Create Beautiful Documents</h1>
+        <h1>Pagayi</h1>
         <p className="hero-subtitle">Design professional documents with AI-powered templates</p>
         
         <div className="create-form">
@@ -90,11 +111,12 @@ const DocumentList: React.FC = () => {
             <div className="templates-grid">
               {categorizedTemplates.flyers.map((template) => (
                 <Link
-                  key={template.name}
-                  to={`/documents/${getUrlName(template.name)}`}
+                  key={template.id}
+                  to={`/documents/${template.id}`}
                   className="template-card"
                 >
                   <div className="template-preview">
+                    <div className="template-icon-placeholder">{getTemplateIcon(template.name)}</div>
                     <div className="template-type-badge">Flyer</div>
                   </div>
                   <div className="template-info">
@@ -114,11 +136,12 @@ const DocumentList: React.FC = () => {
             <div className="templates-grid">
               {categorizedTemplates.presentations.map((template) => (
                 <Link
-                  key={template.name}
-                  to={`/documents/${getUrlName(template.name)}`}
+                  key={template.id}
+                  to={`/documents/${template.id}`}
                   className="template-card"
                 >
                   <div className="template-preview">
+                    <div className="template-icon-placeholder">{getTemplateIcon(template.name)}</div>
                     <div className="template-type-badge">Presentation</div>
                   </div>
                   <div className="template-info">
@@ -138,11 +161,12 @@ const DocumentList: React.FC = () => {
             <div className="templates-grid">
               {categorizedTemplates.catalogs.map((template) => (
                 <Link
-                  key={template.name}
-                  to={`/documents/${getUrlName(template.name)}`}
+                  key={template.id}
+                  to={`/documents/${template.id}`}
                   className="template-card"
                 >
                   <div className="template-preview">
+                    <div className="template-icon-placeholder">{getTemplateIcon(template.name)}</div>
                     <div className="template-type-badge">Catalog</div>
                   </div>
                   <div className="template-info">
@@ -162,11 +186,12 @@ const DocumentList: React.FC = () => {
             <div className="templates-grid">
               {categorizedTemplates.booklets.map((template) => (
                 <Link
-                  key={template.name}
-                  to={`/documents/${getUrlName(template.name)}`}
+                  key={template.id}
+                  to={`/documents/${template.id}`}
                   className="template-card"
                 >
                   <div className="template-preview">
+                    <div className="template-icon-placeholder">{getTemplateIcon(template.name)}</div>
                     <div className="template-type-badge">Booklet</div>
                   </div>
                   <div className="template-info">
@@ -191,6 +216,7 @@ const DocumentList: React.FC = () => {
                   className="template-card dynamic"
                 >
                   <div className="template-preview">
+                    <div className="template-icon-placeholder">📦</div>
                     <div className="template-type-badge imported">Generated</div>
                   </div>
                   <div className="template-info">

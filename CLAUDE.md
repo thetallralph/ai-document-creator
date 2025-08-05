@@ -19,16 +19,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **@mistralai/mistralai** for Mistral AI integration
 - **@monaco-editor/react** for code editing
 - **@babel/standalone** for runtime JSX compilation
+- **@supabase/supabase-js** for authentication and database
+- **@supabase/auth-ui-react** for authentication UI components
 
 ## Architecture
 
-This is a React-based document viewer application with an InDesign-inspired interface for viewing pre-built document templates.
+Pagayi is a React-based document viewer application with an InDesign-inspired interface for viewing pre-built document templates.
 
 ### Key Architectural Patterns
 
 1. **Global State Management**:
    - `EditorCodeContext`: Centralized editor code state shared between code editor and AI assistant
    - `TemplateContext`: Dynamic template management
+   - `AuthContext`: Authentication state management with Supabase integration
    - Eliminates prop drilling and ensures consistency
 
 2. **Token-Efficient AI Integration**:
@@ -36,21 +39,26 @@ This is a React-based document viewer application with an InDesign-inspired inte
    - Utility functions for page extraction and replacement
    - 80-90% reduction in API token usage
 
-3. **Reactive Compilation System**:
-   - Real-time Babel compilation in browser
-   - Debounced user input (1s delay)
-   - Automatic detection of external changes (AI)
-   - Prevents compilation loops with ref tracking
+3. **HTML Template System** (Replaced TSX compilation):
+   - Plain HTML with inline styles for templates
+   - No Babel compilation needed - direct HTML to React conversion
+   - Faster editing with 300ms debounce (down from 1s)
+   - Simpler for AI to understand and modify
+   - Templates stored as JSON with HTML content per page
 
 ### Core Components
 
 #### Navigation & Routing
 - **App** (`src/App.tsx`): Main router setup with routes
-  - `/` - Document list page
-  - `/documents/[document-name]` - Individual document viewer
+  - `/` - Document list page (protected)
+  - `/documents/[document-name]` - Individual document viewer (protected)
+  - `/signin` - Sign in page
+  - `/signup` - Sign up page
+  - `/forgot-password` - Password reset request page
+  - `/reset-password` - Password reset page
 
 #### Main Components
-- **DocumentList** (`src/components/DocumentList.tsx`): Grid display of all available document templates
+- **DocumentList** (`src/components/DocumentList.tsx`): Grid display of all available document templates with user auth status
 - **DocumentViewer** (`src/components/DocumentViewer.tsx`): InDesign-inspired document viewer with:
   - Left sidebar: Document properties (including paper size) and page thumbnails
   - Center canvas: Zoomable document display
@@ -125,12 +133,12 @@ Each size includes width/height in pixels (72 DPI) and display name.
    - **Typography**: Line height checks (warns if ratio < 1.2)
    - **Image Quality**: Warns about low-resolution images
    - Shows summary counts (errors/warnings/info) in header
-6. **Code Editor** (`src/components/CodeEditor.tsx`):
-   - Live TSX editing with Monaco Editor
-   - Auto-compilation with Babel
-   - Always loaded (even when viewing visual mode) for instant switching
-   - Uses global EditorCodeContext for state management
-   - Detects and compiles external changes (from AI) automatically
+6. **Code Editor** (`src/components/HTMLCodeEditor.tsx`):
+   - Live HTML editing with Monaco Editor
+   - No compilation needed - direct HTML display
+   - Page-specific editing - shows HTML for selected page only
+   - Visual page selector in sidebar for switching between pages
+   - @ mention system in AI Assistant for quick page selection
    - Changes reflected in real-time in visual mode
 7. **Zoom Controls** - 25% increment zoom (25%-200%)
 8. **Page Navigation** - Previous/Next buttons for multi-page documents
@@ -144,37 +152,48 @@ Each size includes width/height in pixels (72 DPI) and display name.
 
 ### Document Templates
 
-Current templates in `src/documents/`:
-- **Outlet Sale Flyer** (`outlet-flyer/`) - A4 single-page promotional flyer
+Templates are now stored as HTML in `src/templates/html-templates/`:
+- **Simple Flyer** - Basic A4 flyer template
+- **Outlet Sale Flyer** - A4 single-page promotional flyer with HTML
+- **Multi-Page Booklet** - Example of multi-page HTML document
+- **Test Template** - 6-page template for testing multi-page features
+
+Templates are registered in `src/templates/html-templates/index.ts`.
+
+Legacy TSX templates (deprecated) in `src/documents/`:
 - **Outlet Product Catalog** (`outlet-catalog/`) - A4 multi-page catalog
 - **Outlet Presentation** (`outlet-presentation/`) - 16:9 widescreen presentation
-- **Cactuce Solutions Booklet** (`cactuce-booklet/`) - A5 8-page booklet presenting AssetiQ and DocuStruct solutions
-- **Plan d'Affaires - The Green Rooftop Parc** (`green-rooftop-business-plan/`) - 16:9 presentation (in French) for an ecological urban park business plan in Benin
+- **Cactuce Solutions Booklet** (`cactuce-booklet/`) - A5 8-page booklet
+- **Plan d'Affaires - The Green Rooftop Parc** (`green-rooftop-business-plan/`) - 16:9 presentation (in French)
 
-Templates are registered in `src/documents/templates.ts`.
-
-### Creating New Documents
-1. Create a new folder in `src/documents/` (e.g., `my-document/`)
-2. Create a React component using Document and Page components
-3. Specify paper size in Document component
-4. Use regular HTML and inline styles for content
-5. Export from index.tsx
-6. Add to templates array in `src/documents/templates.ts`
+### Creating New HTML Templates
+1. Create a new TypeScript file in `src/templates/html-templates/` (e.g., `myTemplate.ts`)
+2. Define an HTMLTemplate object with pages array
+3. Each page contains HTML content with inline styles
+4. Export and register in `src/templates/html-templates/index.ts`
 
 Example:
-```tsx
-import { Document, Page } from '../../components/document-components';
+```typescript
+import { HTMLTemplate } from '../../types/htmlTemplate';
 
-export const MyDocument = () => {
-  return (
-    <Document title="My Document" type="flyer" paperSize="A4">
-      <Page background="#ffffff">
-        <h1 style={{ position: 'absolute', top: 50, left: 50 }}>
+export const myTemplateHTML: HTMLTemplate = {
+  id: 'my-template',
+  name: 'My Template',
+  description: 'A simple template',
+  paperSize: 'A4',
+  pages: [
+    {
+      background: '#ffffff',
+      content: `
+        <h1 style="font-size: 32px; margin: 20px;">
           Hello World
         </h1>
-      </Page>
-    </Document>
-  );
+        <p style="font-size: 16px; margin: 20px;">
+          This is my HTML template.
+        </p>
+      `
+    }
+  ]
 };
 ```
 
@@ -281,19 +300,19 @@ The AI Assistant will show connection status in the panel header
    - Replaces only the improved page in the document
    - Maintains document structure and other pages unchanged
 
-#### Reactive Code Compilation
+#### HTML Template Processing
 1. **Change Detection**:
-   - User edits: Tracked via `handleCodeChange`, debounced compilation after 1s
-   - AI changes: Detected when editor code changes externally
-   - Prevents compilation loops with proper ref tracking
-2. **Compilation Flow**:
-   - Babel transforms TSX to JavaScript in browser
-   - Component wrapped with Document/Page imports
-   - Real-time visual updates without page reload
+   - User edits: Tracked via `handleContentChange`, debounced update after 300ms
+   - AI changes: Detected when template updates externally
+   - No compilation loops since no compilation needed
+2. **Processing Flow**:
+   - HTML parsed directly to React elements via `htmlToReact`
+   - Page-specific editing - only selected page HTML shown
+   - Real-time visual updates without compilation
 3. **Status Indicators**:
-   - "Compiling..." during processing
-   - "✓ Applied" when successful
-   - Error messages for invalid code
+   - "Updating..." during processing
+   - "✓ Updated" when successful
+   - Error messages for invalid HTML
 
 #### Error Prevention
 - AI instructed to use only standard HTML elements
@@ -308,3 +327,113 @@ The AI Assistant will show connection status in the panel header
 - Without instructions: AI improves hierarchy, spacing, and design
 - Critical style syntax requirements: always `style={{ ... }}` with double braces
 - Page number context for multi-page documents
+
+## Authentication Setup
+
+### Supabase Configuration
+The app uses Supabase for authentication with support for email/password and Google OAuth.
+
+#### Environment Variables
+Add to your `.env` file:
+```bash
+# Supabase Configuration
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+#### Get Your Supabase Credentials
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to Settings > API
+3. Copy your Project URL and anon/public key
+
+#### Authentication Features
+- **Email/Password Authentication**: Sign up, sign in, and password reset
+- **Google OAuth**: Sign in with Google account
+- **Protected Routes**: Document pages require authentication
+- **Session Management**: Persistent sessions with auto-refresh
+- **Auth Context**: Global authentication state management
+
+#### Authentication Components
+- **AuthContext** (`src/contexts/AuthContext.tsx`): Global auth state and user session management
+- **Sign In** (`src/pages/SignIn.tsx`): Email/password and Google OAuth sign in
+- **Sign Up** (`src/pages/SignUp.tsx`): New account creation with validation
+- **Forgot Password** (`src/pages/ForgotPassword.tsx`): Request password reset email
+- **Reset Password** (`src/pages/ResetPassword.tsx`): Set new password from email link
+- **Protected Route** (`src/components/ProtectedRoute.tsx`): Route wrapper requiring authentication
+
+#### Setting Up Google OAuth
+1. Go to your Supabase dashboard
+2. Navigate to Authentication > Providers
+3. Enable Google provider
+4. Add your Google OAuth credentials:
+   - Client ID from Google Cloud Console
+   - Client Secret from Google Cloud Console
+5. Add redirect URLs in Google Cloud Console:
+   - `https://your-project.supabase.co/auth/v1/callback`
+
+#### Email Templates
+Configure email templates in Supabase dashboard:
+1. Go to Authentication > Email Templates
+2. Customize templates for:
+   - Confirmation emails
+   - Password reset emails
+   - Magic link emails
+
+#### Authentication Flow
+1. Unauthenticated users are redirected to `/signin`
+2. After successful sign in, users return to their requested page
+3. Sign out clears the session and redirects to sign in
+4. Password reset sends email with secure reset link
+
+## Recent Changes (2025-08-05)
+
+### Migrated from TSX to HTML Templates
+- **Motivation**: TSX compilation was complex and slow for LLMs to process
+- **Implementation**: 
+  - Replaced Babel compilation with direct HTML to React conversion
+  - Templates now stored as JSON with HTML content per page
+  - Reduced debounce from 1s to 300ms for faster updates
+- **Benefits**:
+  - Simpler for AI to understand and modify
+  - No compilation errors
+  - Faster editing experience
+  - Easier to create new templates
+
+### HTML Template Features
+- **HTMLCodeEditor**: Page-specific HTML editing with Monaco
+- **HTMLAIAssistant**: Updated to work with HTML templates
+- **Page Navigation**: Visual page selector in sidebar
+- **@ Mention System**: Quick page selection in AI chat
+- **Export Options**: Export as JSON or HTML file
+
+### Previous Changes (2025-08-04)
+
+### Fixed Page Counting in AI Assistant
+- **Issue**: AI Assistant showed only 4 pages instead of 8 for multi-page documents
+- **Solution**: AI Assistant now receives page count from DocumentViewer's DOM query instead of parsing source code
+- **Implementation**: DocumentViewer passes `totalPages={pages.length}` prop to AIAssistant
+- **Result**: Both components now show consistent page counts
+
+### Added @ Mention System for Page Selection
+- **Feature**: Type `@` in chat input to quickly select pages for context
+- **Usage**: 
+  - `@` shows dropdown with all pages
+  - `@2` filters to pages starting with 2
+  - Arrow keys to navigate, Enter to select, Escape to close
+- **Visual Indicators**: 
+  - 👁️ for currently viewing page
+  - ✓ for pages in context
+- **Behavior**: Selected page is added to context and `@` is replaced with `@page1`, `@page2`, etc.
+
+### Single Page Editing Mode
+- **Change**: AI Assistant now only allows editing one page at a time (previously supported multiple)
+- **UI Update**: Shows "Editing: Page X | Viewing: Page Y" instead of multiple selections
+- **Behavior**: Clicking any page or using @ mention sets it as the only context page
+- **Rationale**: Simplifies user experience and prevents confusion about which pages will be affected
+
+### Added Supabase Authentication
+- **Features**: Email/password and Google OAuth authentication
+- **Components**: Sign in, sign up, password reset pages with dark theme styling
+- **Protected Routes**: Document list and viewer pages require authentication
+- **Auth Context**: Global authentication state management with session persistence
+- **UI Updates**: User email display and sign out button in document list header

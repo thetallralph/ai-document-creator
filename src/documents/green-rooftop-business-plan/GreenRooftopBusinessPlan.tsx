@@ -1,19 +1,35 @@
 import { Document, Page } from '../../components/document-components';
+import { unsplashPresets, unsplashImage } from '../../utils/unsplash';
 
 export const GreenRooftopBusinessPlan = () => {
+  const colors = {
+    primary: '#000000',
+    secondary: '#666666',
+    light: '#999999',
+    background: '#FFFFFF',
+    gray: '#F8F9FA',
+    accent: '#2ECC71',
+    border: '#E0E0E0'
+  };
+
+  const fonts = {
+    primary: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    display: 'Georgia, "Times New Roman", serif'
+  };
+
   return (
     <Document title="Plan d'Affaires - The Green Rooftop Parc" type="presentation" paperSize="PRESENTATION_16_9">
-      {/* Slide 1: Titre */}
-      <Page background="linear-gradient(135deg, #134e5e 0%, #71b280 100%)">
+      {/* Slide 1: Title */}
+      <Page background={colors.background}>
         <div style={{
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          color: 'white',
           textAlign: 'center',
-          position: 'relative'
+          position: 'relative',
+          padding: '80px'
         }}>
           <div style={{
             position: 'absolute',
@@ -21,33 +37,43 @@ export const GreenRooftopBusinessPlan = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: 'url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80)',
+            backgroundImage: `url(${unsplashPresets.nature(1280, 720)})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: 0.3
+            opacity: 0.08
           }} />
           
           <div style={{ position: 'relative', zIndex: 1 }}>
             <h1 style={{
-              fontSize: 72,
-              fontWeight: 'bold',
+              fontSize: 64,
+              fontWeight: 300,
+              fontFamily: fonts.display,
+              color: colors.primary,
               margin: '0 0 30px 0',
-              textShadow: '3px 3px 6px rgba(0,0,0,0.5)',
-              letterSpacing: '2px'
+              letterSpacing: '-2px'
             }}>
               The Green Rooftop Parc
             </h1>
+            <div style={{
+              width: 100,
+              height: 2,
+              backgroundColor: colors.accent,
+              margin: '0 auto 30px'
+            }} />
             <p style={{
-              fontSize: 36,
-              margin: '0 0 50px 0',
-              opacity: 0.95,
-              fontStyle: 'italic'
+              fontSize: 24,
+              fontFamily: fonts.primary,
+              color: colors.secondary,
+              margin: '0 0 40px 0',
+              fontWeight: 300
             }}>
               Un souffle vert au cœur de la ville
             </p>
             <p style={{
-              fontSize: 24,
-              opacity: 0.9
+              fontSize: 18,
+              fontFamily: fonts.primary,
+              color: colors.light,
+              margin: 0
             }}>
               Premier parc de poche public-privé du Bénin
             </p>
@@ -56,870 +82,801 @@ export const GreenRooftopBusinessPlan = () => {
       </Page>
 
       {/* Slide 2: Vision & Concept */}
-      <Page background="#ffffff" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 50,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Notre Vision
-        </h2>
-        
+      <Page background={colors.background}>
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 60,
-          alignItems: 'center'
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          <div>
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
-                <span style={{ fontSize: 36, marginRight: 20 }}>🌿</span>
-                <h3 style={{ fontSize: 28, margin: 0, color: '#2c3e50' }}>Une oasis urbaine</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                225 m² de nature en plein cœur de Cotonou, conçu pour la détente, la culture et le bien-être
-              </p>
-            </div>
-            
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
-                <span style={{ fontSize: 36, marginRight: 20 }}>♻️</span>
-                <h3 style={{ fontSize: 28, margin: 0, color: '#2c3e50' }}>Écologique</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                Architecture bio-climatique avec panneaux solaires et récupération d'eau
-              </p>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
-                <span style={{ fontSize: 36, marginRight: 20 }}>💼</span>
-                <h3 style={{ fontSize: 28, margin: 0, color: '#2c3e50' }}>Rentable</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                Modèle économique diversifié et durable
-              </p>
-            </div>
-          </div>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Notre Vision
+          </h2>
           
           <div style={{
-            height: 400,
-            backgroundImage: 'url(https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: 20,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-          }} />
-        </div>
-      </Page>
-
-      {/* Slide 3: Chiffres Clés */}
-      <Page background="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 70,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Chiffres Clés
-        </h2>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 40,
-          marginBottom: 60
-        }}>
-          <div style={{
-            background: 'white',
-            padding: 40,
-            borderRadius: 20,
-            textAlign: 'center',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              color: '#e74c3c',
-              marginBottom: 15
-            }}>
-              57 M FCFA
-            </div>
-            <p style={{
-              fontSize: 22,
-              color: '#555',
-              margin: 0
-            }}>
-              Investissement initial
-            </p>
-          </div>
-          
-          <div style={{
-            background: 'white',
-            padding: 40,
-            borderRadius: 20,
-            textAlign: 'center',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              color: '#3498db',
-              marginBottom: 15
-            }}>
-              92 M FCFA
-            </div>
-            <p style={{
-              fontSize: 22,
-              color: '#555',
-              margin: 0
-            }}>
-              Chiffre d'affaires visé/an
-            </p>
-          </div>
-          
-          <div style={{
-            background: 'white',
-            padding: 40,
-            borderRadius: 20,
-            textAlign: 'center',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              color: '#2ecc71',
-              marginBottom: 15
-            }}>
-              {'< 9 mois'}
-            </div>
-            <p style={{
-              fontSize: 22,
-              color: '#555',
-              margin: 0
-            }}>
-              Retour sur investissement
-            </p>
-          </div>
-        </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 40
-        }}>
-          <div style={{
-            background: 'white',
-            padding: 40,
-            borderRadius: 20,
-            textAlign: 'center',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              color: '#9b59b6',
-              marginBottom: 15
-            }}>
-              50 pers.
-            </div>
-            <p style={{
-              fontSize: 22,
-              color: '#555',
-              margin: 0
-            }}>
-              Capacité maximale
-            </p>
-          </div>
-          
-          <div style={{
-            background: 'white',
-            padding: 40,
-            borderRadius: 20,
-            textAlign: 'center',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              color: '#f39c12',
-              marginBottom: 15
-            }}>
-              7 emplois
-            </div>
-            <p style={{
-              fontSize: 22,
-              color: '#555',
-              margin: 0
-            }}>
-              Créations directes
-            </p>
-          </div>
-        </div>
-      </Page>
-
-      {/* Slide 4: Localisation & Marché */}
-      <Page background="#ffffff" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 50,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Emplacement Stratégique
-        </h2>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 60,
-          alignItems: 'center'
-        }}>
-          <div style={{
-            height: 450,
-            backgroundImage: 'url(https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: 20,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-            position: 'relative'
-          }}>
-            <div style={{
-              position: 'absolute',
-              bottom: 30,
-              left: 30,
-              right: 30,
-              background: 'rgba(255,255,255,0.95)',
-              padding: 20,
-              borderRadius: 15,
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: 24, margin: 0, color: '#134e5e' }}>Quartier La Haie Vive</h3>
-              <p style={{ fontSize: 18, margin: '10px 0 0 0', color: '#666' }}>Cœur dynamique de Cotonou</p>
-            </div>
-          </div>
-          
-          <div>
-            <div style={{ marginBottom: 35 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>
-                <span style={{ fontSize: 32, marginRight: 15 }}>📍</span>
-                <h3 style={{ fontSize: 26, margin: 0, color: '#2c3e50' }}>Zone premium</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                Quartier résidentiel aisé avec ambassades, ONG et entreprises internationales
-              </p>
-            </div>
-            
-            <div style={{ marginBottom: 35 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>
-                <span style={{ fontSize: 32, marginRight: 15 }}>🎓</span>
-                <h3 style={{ fontSize: 26, margin: 0, color: '#2c3e50' }}>2 000 élèves</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                CEG Océan et École Montaigne à proximité immédiate
-              </p>
-            </div>
-            
-            <div style={{ marginBottom: 35 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>
-                <span style={{ fontSize: 32, marginRight: 15 }}>👥</span>
-                <h3 style={{ fontSize: 26, margin: 0, color: '#2c3e50' }}>270 000 habitants</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                Dans un rayon de 3 km autour du parc
-              </p>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>
-                <span style={{ fontSize: 32, marginRight: 15 }}>✈️</span>
-                <h3 style={{ fontSize: 26, margin: 0, color: '#2c3e50' }}>1 km de l'aéroport</h3>
-              </div>
-              <p style={{ fontSize: 20, lineHeight: 1.6, color: '#555' }}>
-                Accès facile pour visiteurs internationaux
-              </p>
-            </div>
-          </div>
-        </div>
-      </Page>
-
-      {/* Slide 5: Services & Offres */}
-      <Page background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: 'white',
-          marginBottom: 60,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Nos Services
-        </h2>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 40
-        }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>🎟️</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Billetterie</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                2 000 FCFA/jour • Abonnements mensuels disponibles
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>🥗</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Kiosque Healthy</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                Cuisine fraîche et locale • 3 000-5 000 FCFA
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>🎨</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Ateliers</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                Yoga, DIY, jardinage • 15 000-25 000 FCFA
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>🎭</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Événements</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                Concerts, expositions, marchés créatifs
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>🏢</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Privatisation</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                Team building, événements corporate
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            padding: 35,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: 48, marginRight: 25 }}>📶</span>
-            <div>
-              <h3 style={{ fontSize: 24, margin: '0 0 10px 0', color: '#2c3e50' }}>Wi-Fi Fibre</h3>
-              <p style={{ fontSize: 18, margin: 0, color: '#666' }}>
-                Espace coworking plein air
-              </p>
-            </div>
-          </div>
-        </div>
-      </Page>
-
-      {/* Slide 6: Impact Environnemental */}
-      <Page background="#ffffff" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 60,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Impact Environnemental
-        </h2>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 60,
-          alignItems: 'center'
-        }}>
-          <div>
-            <div style={{
-              background: '#f0f9ff',
-              padding: 35,
-              borderRadius: 20,
-              marginBottom: 30,
-              borderLeft: '5px solid #3498db'
-            }}>
-              <h3 style={{ fontSize: 26, margin: '0 0 15px 0', color: '#2c3e50' }}>
-                🌡️ Réduction de température
-              </h3>
-              <p style={{ fontSize: 20, margin: 0, color: '#555', lineHeight: 1.6 }}>
-                -2°C grâce à la végétalisation et l'ombrage
-              </p>
-            </div>
-            
-            <div style={{
-              background: '#f0fdf4',
-              padding: 35,
-              borderRadius: 20,
-              marginBottom: 30,
-              borderLeft: '5px solid #2ecc71'
-            }}>
-              <h3 style={{ fontSize: 26, margin: '0 0 15px 0', color: '#2c3e50' }}>
-                🌳 Captation CO₂
-              </h3>
-              <p style={{ fontSize: 20, margin: 0, color: '#555', lineHeight: 1.6 }}>
-                312 kg de CO₂ captés par an
-              </p>
-            </div>
-            
-            <div style={{
-              background: '#fef3c7',
-              padding: 35,
-              borderRadius: 20,
-              borderLeft: '5px solid #f39c12'
-            }}>
-              <h3 style={{ fontSize: 26, margin: '0 0 15px 0', color: '#2c3e50' }}>
-                ☀️ Énergie solaire
-              </h3>
-              <p style={{ fontSize: 20, margin: 0, color: '#555', lineHeight: 1.6 }}>
-                60% d'autonomie énergétique
-              </p>
-            </div>
-          </div>
-          
-          <div style={{
-            height: 500,
-            backgroundImage: 'url(https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: 20,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-          }} />
-        </div>
-      </Page>
-
-      {/* Slide 7: Modèle Financier */}
-      <Page background="linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 60,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Modèle Financier
-        </h2>
-        
-        <div style={{
-          background: 'white',
-          padding: 50,
-          borderRadius: 20,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-          marginBottom: 40
-        }}>
-          <h3 style={{ fontSize: 32, marginBottom: 30, color: '#2c3e50', textAlign: 'center' }}>
-            Sources de Revenus
-          </h3>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30 }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '20px 0',
-              borderBottom: '2px solid #ecf0f1'
-            }}>
-              <span style={{ fontSize: 22, color: '#555' }}>🎟️ Billetterie</span>
-              <span style={{ fontSize: 22, fontWeight: 'bold', color: '#e74c3c' }}>35%</span>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '20px 0',
-              borderBottom: '2px solid #ecf0f1'
-            }}>
-              <span style={{ fontSize: 22, color: '#555' }}>🥗 Kiosque F&B</span>
-              <span style={{ fontSize: 22, fontWeight: 'bold', color: '#3498db' }}>15%</span>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '20px 0',
-              borderBottom: '2px solid #ecf0f1'
-            }}>
-              <span style={{ fontSize: 22, color: '#555' }}>🎨 Ateliers</span>
-              <span style={{ fontSize: 22, fontWeight: 'bold', color: '#9b59b6' }}>25%</span>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '20px 0',
-              borderBottom: '2px solid #ecf0f1'
-            }}>
-              <span style={{ fontSize: 22, color: '#555' }}>🤝 Sponsoring</span>
-              <span style={{ fontSize: 22, fontWeight: 'bold', color: '#f39c12' }}>25%</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 30
-        }}>
-          <div style={{
-            background: 'white',
-            padding: 30,
-            borderRadius: 15,
-            textAlign: 'center',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-          }}>
-            <h4 style={{ fontSize: 20, marginBottom: 15, color: '#666' }}>Marge opérationnelle</h4>
-            <p style={{ fontSize: 36, fontWeight: 'bold', color: '#2ecc71', margin: 0 }}>72%</p>
-          </div>
-          
-          <div style={{
-            background: 'white',
-            padding: 30,
-            borderRadius: 15,
-            textAlign: 'center',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-          }}>
-            <h4 style={{ fontSize: 20, marginBottom: 15, color: '#666' }}>ROI</h4>
-            <p style={{ fontSize: 36, fontWeight: 'bold', color: '#e74c3c', margin: 0 }}>132%</p>
-          </div>
-          
-          <div style={{
-            background: 'white',
-            padding: 30,
-            borderRadius: 15,
-            textAlign: 'center',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
-          }}>
-            <h4 style={{ fontSize: 20, marginBottom: 15, color: '#666' }}>Break-even</h4>
-            <p style={{ fontSize: 36, fontWeight: 'bold', color: '#3498db', margin: 0 }}>24 mois</p>
-          </div>
-        </div>
-      </Page>
-
-      {/* Slide 8: Offre Investisseurs */}
-      <Page background="#ffffff" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: '#134e5e',
-          marginBottom: 60,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Opportunité d'Investissement
-        </h2>
-        
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: 50,
-          borderRadius: 20,
-          color: 'white',
-          marginBottom: 50,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-        }}>
-          <h3 style={{ fontSize: 36, marginBottom: 30, textAlign: 'center' }}>
-            Levée de fonds : 30 M FCFA
-          </h3>
-          
-          <div style={{
+            flex: 1,
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 80,
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{ marginBottom: 40 }}>
+                <h3 style={{ 
+                  fontSize: 24, 
+                  fontFamily: fonts.primary,
+                  fontWeight: 500,
+                  color: colors.primary,
+                  marginBottom: 15
+                }}>
+                  Une oasis urbaine
+                </h3>
+                <p style={{ 
+                  fontSize: 18, 
+                  lineHeight: 1.6, 
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  225 m² de nature en plein cœur de Cotonou, conçu pour la détente, la culture et le bien-être
+                </p>
+              </div>
+              
+              <div style={{ marginBottom: 40 }}>
+                <h3 style={{ 
+                  fontSize: 24, 
+                  fontFamily: fonts.primary,
+                  fontWeight: 500,
+                  color: colors.primary,
+                  marginBottom: 15
+                }}>
+                  Écologique
+                </h3>
+                <p style={{ 
+                  fontSize: 18, 
+                  lineHeight: 1.6, 
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  Architecture bio-climatique avec panneaux solaires et récupération d'eau
+                </p>
+              </div>
+              
+              <div>
+                <h3 style={{ 
+                  fontSize: 24, 
+                  fontFamily: fonts.primary,
+                  fontWeight: 500,
+                  color: colors.primary,
+                  marginBottom: 15
+                }}>
+                  Rentable
+                </h3>
+                <p style={{ 
+                  fontSize: 18, 
+                  lineHeight: 1.6, 
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  Modèle économique viable avec multiple sources de revenus
+                </p>
+              </div>
+            </div>
+            
+            <div style={{
+              width: '100%',
+              height: 400,
+              backgroundImage: `url(${unsplashImage({ 
+                width: 500, 
+                height: 400, 
+                keywords: ['park', 'garden', 'minimal'] 
+              })})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
+          </div>
+        </div>
+      </Page>
+
+      {/* Slide 3: Marché Cible */}
+      <Page background={colors.gray}>
+        <div style={{
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Marché Cible
+          </h2>
+          
+          <div style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 40
           }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, fontWeight: 'bold', marginBottom: 10 }}>10%</div>
-              <p style={{ fontSize: 20, opacity: 0.9 }}>Rendement annuel garanti</p>
-            </div>
-            
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 48, fontWeight: 'bold', marginBottom: 10 }}>6 ans</div>
-              <p style={{ fontSize: 20, opacity: 0.9 }}>Durée du placement</p>
-            </div>
+            {[
+              {
+                title: 'Familles',
+                desc: 'Espace sécurisé pour enfants avec aire de jeux écologique',
+                value: '45%'
+              },
+              {
+                title: 'Jeunes Professionnels',
+                desc: 'Lieu de détente et networking après le travail',
+                value: '35%'
+              },
+              {
+                title: 'Touristes',
+                desc: 'Attraction unique et authentique à Cotonou',
+                value: '20%'
+              }
+            ].map((segment, index) => (
+              <div key={index} style={{
+                backgroundColor: colors.background,
+                padding: 40,
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  fontSize: 48,
+                  fontWeight: 700,
+                  color: colors.accent,
+                  marginBottom: 20,
+                  fontFamily: fonts.primary
+                }}>
+                  {segment.value}
+                </div>
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 500,
+                  color: colors.primary,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary
+                }}>
+                  {segment.title}
+                </h3>
+                <p style={{
+                  fontSize: 16,
+                  color: colors.secondary,
+                  lineHeight: 1.5,
+                  fontFamily: fonts.primary
+                }}>
+                  {segment.desc}
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
-        
-        <div style={{ marginBottom: 40 }}>
-          <h3 style={{ fontSize: 32, marginBottom: 30, color: '#2c3e50', textAlign: 'center' }}>
-            Avantages Investisseurs
-          </h3>
           
           <div style={{
+            marginTop: 40,
+            textAlign: 'center',
+            fontSize: 20,
+            color: colors.primary,
+            fontFamily: fonts.primary
+          }}>
+            Potentiel: <strong>50,000+ visiteurs par an</strong>
+          </div>
+        </div>
+      </Page>
+
+      {/* Slide 4: Services & Revenus */}
+      <Page background={colors.background}>
+        <div style={{
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Sources de Revenus
+          </h2>
+          
+          <div style={{
+            flex: 1,
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 30
+            gridTemplateColumns: '1fr 1fr',
+            gap: 60
+          }}>
+            <div>
+              <h3 style={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: colors.primary,
+                marginBottom: 30,
+                fontFamily: fonts.primary
+              }}>
+                Services Principaux
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {[
+                  { service: 'Café-Restaurant Bio', price: '2,000-5,000 FCFA' },
+                  { service: 'Location d\'espaces', price: '50,000+ FCFA/jour' },
+                  { service: 'Événements culturels', price: '1,000-3,000 FCFA' },
+                  { service: 'Ateliers & formations', price: '5,000-15,000 FCFA' }
+                ].map((item, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingBottom: 15,
+                    borderBottom: `1px solid ${colors.border}`
+                  }}>
+                    <span style={{
+                      fontSize: 18,
+                      color: colors.primary,
+                      fontFamily: fonts.primary
+                    }}>
+                      {item.service}
+                    </span>
+                    <span style={{
+                      fontSize: 18,
+                      color: colors.accent,
+                      fontWeight: 500,
+                      fontFamily: fonts.primary
+                    }}>
+                      {item.price}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div style={{
+              backgroundColor: colors.gray,
+              padding: 40,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}>
+              <h3 style={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: colors.primary,
+                marginBottom: 30,
+                fontFamily: fonts.primary,
+                textAlign: 'center'
+              }}>
+                Projection Annuelle
+              </h3>
+              
+              <div style={{
+                fontSize: 48,
+                fontWeight: 700,
+                color: colors.accent,
+                textAlign: 'center',
+                marginBottom: 20,
+                fontFamily: fonts.primary
+              }}>
+                75M FCFA
+              </div>
+              
+              <p style={{
+                fontSize: 16,
+                color: colors.secondary,
+                textAlign: 'center',
+                fontFamily: fonts.primary
+              }}>
+                Chiffre d'affaires prévu année 3
+              </p>
+            </div>
+          </div>
+        </div>
+      </Page>
+
+      {/* Slide 5: Impact & Bénéfices */}
+      <Page background={colors.background}>
+        <div style={{
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Impact Social & Environnemental
+          </h2>
+          
+          <div style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 80,
+            alignItems: 'center'
           }}>
             <div style={{
-              background: '#f8f9fa',
-              padding: 30,
-              borderRadius: 15,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontSize: 36, marginRight: 20 }}>💰</span>
-              <div>
-                <h4 style={{ fontSize: 22, margin: '0 0 10px 0', color: '#2c3e50' }}>Dividendes annuels</h4>
-                <p style={{ fontSize: 18, margin: 0, color: '#666' }}>10% de votre investissement chaque année</p>
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#f8f9fa',
-              padding: 30,
-              borderRadius: 15,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontSize: 36, marginRight: 20 }}>🛡️</span>
-              <div>
-                <h4 style={{ fontSize: 22, margin: '0 0 10px 0', color: '#2c3e50' }}>Capital garanti</h4>
-                <p style={{ fontSize: 18, margin: 0, color: '#666' }}>100% remboursé en fin de bail</p>
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#f8f9fa',
-              padding: 30,
-              borderRadius: 15,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontSize: 36, marginRight: 20 }}>🎖️</span>
-              <div>
-                <h4 style={{ fontSize: 22, margin: '0 0 10px 0', color: '#2c3e50' }}>Nom gravé</h4>
-                <p style={{ fontSize: 18, margin: 0, color: '#666' }}>Sur le mur des mécènes du parc</p>
-              </div>
-            </div>
-            
-            <div style={{
-              background: '#f8f9fa',
-              padding: 30,
-              borderRadius: 15,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontSize: 36, marginRight: 20 }}>♾️</span>
-              <div>
-                <h4 style={{ fontSize: 22, margin: '0 0 10px 0', color: '#2c3e50' }}>Accès illimité</h4>
-                <p style={{ fontSize: 18, margin: 0, color: '#666' }}>Au parc pendant toute la durée</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div style={{
-          textAlign: 'center',
-          fontSize: 20,
-          color: '#666',
-          fontStyle: 'italic'
-        }}>
-          Ticket minimum : 1 M FCFA
-        </div>
-      </Page>
-
-      {/* Slide 9: Calendrier */}
-      <Page background="linear-gradient(135deg, #134e5e 0%, #71b280 100%)" padding="80px">
-        <h2 style={{
-          fontSize: 48,
-          color: 'white',
-          marginBottom: 60,
-          textAlign: 'center',
-          fontWeight: 'bold'
-        }}>
-          Calendrier de Réalisation
-        </h2>
-        
-        <div style={{
-          background: 'rgba(255,255,255,0.95)',
-          padding: 50,
-          borderRadius: 20,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-        }}>
-          <div style={{ position: 'relative' }}>
-            {/* Timeline line */}
-            <div style={{
-              position: 'absolute',
-              left: 50,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: '#71b280'
+              width: '100%',
+              height: 400,
+              backgroundImage: `url(${unsplashImage({ 
+                width: 500, 
+                height: 400, 
+                keywords: ['community', 'garden', 'people'] 
+              })})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
             }} />
             
-            {/* Timeline items */}
-            <div style={{ paddingLeft: 100 }}>
-              <div style={{ marginBottom: 40, position: 'relative' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: -70,
-                  top: 5,
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: '#71b280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}>1</div>
-                <h3 style={{ fontSize: 24, marginBottom: 10, color: '#2c3e50' }}>Juillet 2025</h3>
-                <p style={{ fontSize: 20, color: '#666' }}>Études et permis validés</p>
+            <div>
+              <div style={{ marginBottom: 35 }}>
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: colors.primary,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary
+                }}>
+                  Création d'emplois
+                </h3>
+                <p style={{
+                  fontSize: 18,
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  15 emplois directs, 30 emplois indirects
+                </p>
               </div>
               
-              <div style={{ marginBottom: 40, position: 'relative' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: -70,
-                  top: 5,
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: '#71b280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}>2</div>
-                <h3 style={{ fontSize: 24, marginBottom: 10, color: '#2c3e50' }}>Août - Novembre 2025</h3>
-                <p style={{ fontSize: 20, color: '#666' }}>Phase de construction et aménagement</p>
+              <div style={{ marginBottom: 35 }}>
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: colors.primary,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary
+                }}>
+                  Réduction CO2
+                </h3>
+                <p style={{
+                  fontSize: 18,
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  -2 tonnes de CO2 par an grâce à la végétation
+                </p>
               </div>
               
-              <div style={{ position: 'relative' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: -70,
-                  top: 5,
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: '#e74c3c',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}>3</div>
-                <h3 style={{ fontSize: 24, marginBottom: 10, color: '#2c3e50' }}>Décembre 2025</h3>
-                <p style={{ fontSize: 20, color: '#666' }}>Inauguration et ouverture au public</p>
+              <div style={{ marginBottom: 35 }}>
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: colors.primary,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary
+                }}>
+                  Éducation environnementale
+                </h3>
+                <p style={{
+                  fontSize: 18,
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  5,000+ enfants sensibilisés par an
+                </p>
+              </div>
+              
+              <div>
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: colors.primary,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary
+                }}>
+                  Biodiversité urbaine
+                </h3>
+                <p style={{
+                  fontSize: 18,
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  50+ espèces végétales locales
+                </p>
               </div>
             </div>
           </div>
         </div>
       </Page>
 
-      {/* Slide 10: Appel à l'action */}
-      <Page background="linear-gradient(135deg, #134e5e 0%, #71b280 100%)">
+      {/* Slide 6: Financement */}
+      <Page background={colors.gray}>
         <div style={{
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Plan de Financement
+          </h2>
+          
+          <div style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 60
+          }}>
+            <div>
+              <h3 style={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: colors.primary,
+                marginBottom: 30,
+                fontFamily: fonts.primary
+              }}>
+                Investissement Initial
+              </h3>
+              
+              <div style={{
+                backgroundColor: colors.background,
+                padding: 30,
+                marginBottom: 30
+              }}>
+                <div style={{
+                  fontSize: 36,
+                  fontWeight: 700,
+                  color: colors.accent,
+                  marginBottom: 10,
+                  fontFamily: fonts.primary
+                }}>
+                  120M FCFA
+                </div>
+                <p style={{
+                  fontSize: 16,
+                  color: colors.secondary,
+                  fontFamily: fonts.primary
+                }}>
+                  Capital total requis
+                </p>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 16,
+                  fontFamily: fonts.primary
+                }}>
+                  <span style={{ color: colors.secondary }}>Infrastructure</span>
+                  <span style={{ color: colors.primary, fontWeight: 500 }}>60M FCFA</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 16,
+                  fontFamily: fonts.primary
+                }}>
+                  <span style={{ color: colors.secondary }}>Aménagement</span>
+                  <span style={{ color: colors.primary, fontWeight: 500 }}>35M FCFA</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 16,
+                  fontFamily: fonts.primary
+                }}>
+                  <span style={{ color: colors.secondary }}>Équipements</span>
+                  <span style={{ color: colors.primary, fontWeight: 500 }}>15M FCFA</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 16,
+                  fontFamily: fonts.primary
+                }}>
+                  <span style={{ color: colors.secondary }}>Fonds de roulement</span>
+                  <span style={{ color: colors.primary, fontWeight: 500 }}>10M FCFA</span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h3 style={{
+                fontSize: 24,
+                fontWeight: 500,
+                color: colors.primary,
+                marginBottom: 30,
+                fontFamily: fonts.primary
+              }}>
+                Retour sur Investissement
+              </h3>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 20,
+                marginBottom: 30
+              }}>
+                <div style={{
+                  backgroundColor: colors.background,
+                  padding: 25,
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: colors.accent,
+                    marginBottom: 5,
+                    fontFamily: fonts.primary
+                  }}>
+                    4 ans
+                  </div>
+                  <p style={{
+                    fontSize: 14,
+                    color: colors.secondary,
+                    fontFamily: fonts.primary
+                  }}>
+                    Période de retour
+                  </p>
+                </div>
+                
+                <div style={{
+                  backgroundColor: colors.background,
+                  padding: 25,
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: colors.accent,
+                    marginBottom: 5,
+                    fontFamily: fonts.primary
+                  }}>
+                    22%
+                  </div>
+                  <p style={{
+                    fontSize: 14,
+                    color: colors.secondary,
+                    fontFamily: fonts.primary
+                  }}>
+                    TRI sur 10 ans
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{
+                backgroundColor: colors.accent,
+                color: colors.background,
+                padding: 25,
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  fontSize: 18,
+                  fontFamily: fonts.primary,
+                  margin: 0
+                }}>
+                  Rentabilité dès la 2ème année
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Page>
+
+      {/* Slide 7: Équipe */}
+      <Page background={colors.background}>
+        <div style={{
+          padding: 80,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            color: colors.primary,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Notre Équipe
+          </h2>
+          
+          <div style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 40
+          }}>
+            {[
+              {
+                name: 'Marie Kouassi',
+                role: 'Directrice Générale',
+                exp: '15 ans en gestion de projets durables'
+              },
+              {
+                name: 'Jean-Paul Mensah',
+                role: 'Directeur Technique',
+                exp: 'Expert en architecture bio-climatique'
+              },
+              {
+                name: 'Aminata Diallo',
+                role: 'Directrice Marketing',
+                exp: 'Spécialiste tourisme responsable'
+              }
+            ].map((member, index) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: 150,
+                  height: 150,
+                  margin: '0 auto 25px',
+                  borderRadius: '50%',
+                  backgroundImage: `url(${unsplashPresets.business(150, 150)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: `3px solid ${colors.border}`
+                }} />
+                
+                <h3 style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: colors.primary,
+                  marginBottom: 8,
+                  fontFamily: fonts.primary
+                }}>
+                  {member.name}
+                </h3>
+                
+                <p style={{
+                  fontSize: 16,
+                  color: colors.accent,
+                  marginBottom: 15,
+                  fontFamily: fonts.primary,
+                  fontWeight: 500
+                }}>
+                  {member.role}
+                </p>
+                
+                <p style={{
+                  fontSize: 14,
+                  color: colors.secondary,
+                  lineHeight: 1.5,
+                  fontFamily: fonts.primary
+                }}>
+                  {member.exp}
+                </p>
+              </div>
+            ))}
+          </div>
+          
+          <div style={{
+            marginTop: 40,
+            padding: 30,
+            backgroundColor: colors.gray,
+            textAlign: 'center'
+          }}>
+            <p style={{
+              fontSize: 18,
+              color: colors.primary,
+              fontFamily: fonts.primary,
+              margin: 0
+            }}>
+              Soutenu par un conseil consultatif d'experts en développement durable et urbanisme
+            </p>
+          </div>
+        </div>
+      </Page>
+
+      {/* Slide 8: Prochaines Étapes */}
+      <Page background={colors.accent}>
+        <div style={{
+          padding: 80,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          alignItems: 'center',
-          color: 'white',
-          textAlign: 'center',
-          padding: 80,
-          position: 'relative'
+          color: colors.background
         }}>
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: 'url(https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=1920&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.3
-          }} />
+          <h2 style={{
+            fontSize: 48,
+            fontFamily: fonts.display,
+            fontWeight: 300,
+            marginBottom: 60,
+            textAlign: 'center'
+          }}>
+            Rejoignez l'Aventure
+          </h2>
           
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 style={{
-              fontSize: 56,
-              fontWeight: 'bold',
-              marginBottom: 40,
-              textShadow: '3px 3px 6px rgba(0,0,0,0.5)'
-            }}>
-              Rejoignez l'Aventure !
-            </h2>
-            
+          <div style={{
+            maxWidth: 800,
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
             <p style={{
-              fontSize: 28,
+              fontSize: 24,
               marginBottom: 50,
-              lineHeight: 1.6,
-              maxWidth: 800,
-              opacity: 0.95
+              fontFamily: fonts.primary,
+              fontWeight: 300,
+              lineHeight: 1.6
             }}>
-              Ensemble, créons le premier parc de poche du Bénin et transformons Cotonou en ville verte et durable
+              Investissez dans le premier espace vert innovant du Bénin et contribuez à transformer notre ville
             </p>
             
             <div style={{
-              background: 'rgba(255,255,255,0.2)',
-              backdropFilter: 'blur(10px)',
-              padding: 40,
-              borderRadius: 20,
-              border: '2px solid rgba(255,255,255,0.3)',
-              marginBottom: 40
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 30,
+              marginBottom: 60
             }}>
-              <h3 style={{ fontSize: 32, marginBottom: 20 }}>Contact</h3>
-              <p style={{ fontSize: 24, margin: '0 0 10px 0' }}>Cabinet Architecture du Soleil</p>
-              <p style={{ fontSize: 20, opacity: 0.9 }}>info@greenrooftopparc.bj</p>
+              {[
+                { step: 'T1 2024', desc: 'Finalisation financement' },
+                { step: 'T2 2024', desc: 'Début construction' },
+                { step: 'T4 2024', desc: 'Ouverture au public' }
+              ].map((item, index) => (
+                <div key={index} style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  padding: 25,
+                  borderRadius: 0
+                }}>
+                  <div style={{
+                    fontSize: 20,
+                    fontWeight: 600,
+                    marginBottom: 10,
+                    fontFamily: fonts.primary
+                  }}>
+                    {item.step}
+                  </div>
+                  <div style={{
+                    fontSize: 16,
+                    fontFamily: fonts.primary
+                  }}>
+                    {item.desc}
+                  </div>
+                </div>
+              ))}
             </div>
             
-            <p style={{
+            <div style={{
+              width: 80,
+              height: 2,
+              backgroundColor: colors.background,
+              margin: '0 auto 40px',
+              opacity: 0.5
+            }} />
+            
+            <div style={{
               fontSize: 20,
-              fontStyle: 'italic',
-              opacity: 0.8
+              fontFamily: fonts.primary
             }}>
-              "Un souffle vert au cœur de la ville"
-            </p>
+              <div style={{ marginBottom: 10 }}>
+                <strong>Contact:</strong> contact@greenrooftop.bj
+              </div>
+              <div>
+                <strong>Tél:</strong> +229 21 00 00 00
+              </div>
+            </div>
           </div>
         </div>
       </Page>

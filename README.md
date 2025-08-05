@@ -1,6 +1,6 @@
-# AI Document Creator
+# Pagayi
 
-A React-based document creation and viewing application with an InDesign-inspired interface. Create, view, export, and import professional document templates with support for AI-generated content.
+Pagayi is a React-based document creation and viewing application with an InDesign-inspired interface. Create, view, export, and import professional document templates with support for AI-generated content.
 
 ## Features
 

@@ -13,9 +13,15 @@ export function extractPages(sourceCode: string): PageInfo[] {
   const pages: PageInfo[] = [];
   let currentIndex = 0;
   
+  console.log('[PageExtractor] Starting extraction, source length:', sourceCode.length);
+  
   while (currentIndex < sourceCode.length) {
     const pageStart = sourceCode.indexOf('<Page', currentIndex);
-    if (pageStart === -1) break;
+    if (pageStart === -1) {
+      console.log('[PageExtractor] No more pages found after index:', currentIndex);
+      break;
+    }
+    console.log('[PageExtractor] Found page at index:', pageStart);
     
     // Find the matching closing tag by counting depth
     let depth = 0;
@@ -58,11 +64,15 @@ export function extractPages(sourceCode: string): PageInfo[] {
             const nextChar = sourceCode[i + 5];
             if (nextChar === ' ' || nextChar === '>' || nextChar === '/') {
               depth++;
+              if (depth > 1) {
+                console.log(`[PageExtractor] Found nested <Page at ${i}, depth now: ${depth}`);
+              }
             }
           }
           // Check for </Page>
           else if (sourceCode.substring(i, i + 7) === '</Page>') {
             depth--;
+            console.log(`[PageExtractor] Found </Page> at ${i}, depth now: ${depth}`);
             if (depth === 0) {
               // Found the complete Page component
               const fullPage = sourceCode.substring(pageStart, i + 7);
@@ -83,6 +93,7 @@ export function extractPages(sourceCode: string): PageInfo[] {
                 endIndex: i + 7
               });
               
+              console.log(`[PageExtractor] Extracted page ${pages.length}:`, openTag.substring(0, 50));
               currentIndex = i + 7;
               break;
             }
@@ -94,7 +105,36 @@ export function extractPages(sourceCode: string): PageInfo[] {
     
     // If we couldn't find a closing tag, move past this occurrence
     if (i >= sourceCode.length) {
-      currentIndex = pageStart + 5;
+      console.log('[PageExtractor] Warning: Could not find closing tag for page at index:', pageStart);
+      console.log('[PageExtractor] Page opening:', sourceCode.substring(pageStart, pageStart + 100));
+      console.log('[PageExtractor] Search ended at index:', i, 'depth:', depth);
+      
+      // Try to find the next </Page> tag directly
+      const nextClosingTag = sourceCode.indexOf('</Page>', pageStart);
+      if (nextClosingTag !== -1 && depth === 1) {
+        console.log('[PageExtractor] Found </Page> at index:', nextClosingTag, 'distance:', nextClosingTag - pageStart);
+        console.log('[PageExtractor] Attempting recovery by using direct closing tag');
+        
+        // Extract the page content directly
+        const fullPage = sourceCode.substring(pageStart, nextClosingTag + 7);
+        const pageOpenMatch = fullPage.match(/<Page[^>]*>/);
+        const openTag = pageOpenMatch ? pageOpenMatch[0] : '<Page>';
+        const innerContentMatch = fullPage.match(/<Page[^>]*>([\s\S]*)<\/Page>/);
+        const innerContent = innerContentMatch ? innerContentMatch[1] : '';
+        
+        pages.push({
+          fullPage,
+          openTag,
+          innerContent,
+          startIndex: pageStart,
+          endIndex: nextClosingTag + 7
+        });
+        
+        console.log(`[PageExtractor] Recovered page ${pages.length}:`, openTag.substring(0, 50));
+        currentIndex = nextClosingTag + 7;
+      } else {
+        currentIndex = pageStart + 5;
+      }
     }
   }
   

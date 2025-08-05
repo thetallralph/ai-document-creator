@@ -1,18 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { allTemplates } from '../documents/templates';
+import { htmlTemplateService } from '../services/htmlTemplateService';
+import { registerBuiltInHTMLTemplates } from '../templates/html-templates';
+import { htmlTemplateToReact } from '../utils/htmlToReact';
+import { HTMLTemplate } from '../types/htmlTemplate';
 import { PAPER_SIZES } from '../config/paperSizes';
 import { preparePrintStyles, cleanupPrintStyles } from '../utils/printUtils';
-import { serializeDocument, downloadTemplate } from '../utils/templateSerializer';
-import { exportTemplateForBabel } from '../utils/templateExporter';
-import { useTemplates } from '../contexts/TemplateContext';
+// import { useTemplates } from '../contexts/TemplateContext';
 import { useEditorCode } from '../contexts/EditorCodeContext';
 import PageChecker from './PageChecker';
-import { CodeEditor } from './CodeEditor';
-import { AIAssistant } from './AIAssistant';
-import { getTemplateSource } from '../documents/sourceImports';
-import { getDocumentSource } from '../utils/documentSourceExtractor';
+import { HTMLCodeEditor } from './HTMLCodeEditor';
+import { HTMLAIAssistant } from './HTMLAIAssistant';
+import { ProfileButton } from './ProfileButton';
 import './DocumentViewer.css';
+
+// Register HTML templates
+registerBuiltInHTMLTemplates();
 
 interface PageElement {
   id: string;
@@ -36,65 +39,73 @@ const DocumentViewer: React.FC = () => {
   const [aiPanelCollapsed, setAiPanelCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
   const [editableComponent, setEditableComponent] = useState<React.ComponentType | null>(null);
+  const [currentHTMLTemplate, setCurrentHTMLTemplate] = useState<HTMLTemplate | null>(null);
+  const [compilationError, setCompilationError] = useState<string | null>(null);
   const scrollToPageRef = useRef<((pageIndex: number) => void) | null>(null);
-  const { getDynamicTemplate } = useTemplates();
+  const previousDocumentNameRef = useRef<string | undefined>(documentName);
+  // const { getDynamicTemplate } = useTemplates();
   const { setEditorCode } = useEditorCode();
   
-  // Find the template - either static or dynamic
-  let template: any;
+  // Create a template object that mimics the old structure
+  let template: any = null;
   if (documentName) {
-    // First check static templates
-    template = allTemplates.find(
-      t => t.name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '').replace(/'/g, '') === documentName
-    );
-    
-    // If not found in static, check dynamic templates
-    if (!template) {
-      const dynamicTemplate = getDynamicTemplate(documentName);
-      if (dynamicTemplate) {
-        template = dynamicTemplate;
+    const htmlTemplate = htmlTemplateService.getTemplate(documentName);
+    if (htmlTemplate) {
+      // Create a wrapper component that renders the HTML template
+      const TemplateComponent = () => {
+        try {
+          // Use currentHTMLTemplate if available (which includes edits), otherwise use the original
+          const templateToRender = currentHTMLTemplate || htmlTemplate;
+          return htmlTemplateToReact(templateToRender);
+        } catch (error) {
+          console.error('Error rendering template:', error);
+          return <div>Error rendering template</div>;
+        }
+      };
+      
+      template = {
+        name: htmlTemplate.name,
+        description: htmlTemplate.description,
+        component: TemplateComponent
+      };
+      
+      // Store the HTML template for later use
+      if (currentHTMLTemplate?.id !== htmlTemplate.id) {
+        setCurrentHTMLTemplate(htmlTemplate);
       }
     }
   }
   
   // Reset editable component when switching documents
   useEffect(() => {
-    setEditableComponent(null);
+    // Only reset if we're actually changing documents
+    if (documentName !== previousDocumentNameRef.current) {
+      // Clear the editable component since we're switching documents
+      setEditableComponent(null);
+      previousDocumentNameRef.current = documentName;
+    }
+    // Don't clear editor code here - let CodeEditor manage its own state
   }, [documentName]);
+  
 
-  // Load source code when template is available
+  // Load HTML content when template is available
   useEffect(() => {
-    const loadSource = async () => {
-      if (!template) {
-        return;
-      }
+    if (currentHTMLTemplate) {
+      // For HTML templates, we just set the HTML content of the current page
+      const currentPageContent = currentHTMLTemplate.pages[selectedPage]?.content || '';
+      setEditorCode(currentPageContent);
       
+      // Update the editable component with the latest template changes
       try {
-        // Check if template has code (dynamic template)
-        if ('code' in template && template.code) {
-          setEditorCode(template.code);
-          return;
-        }
-        
-        // Try to get source from template source first
-        let source = template.name ? getTemplateSource(template.name) : null;
-        
-        // If not found, try to extract from component
-        if (!source && template.component) {
-          const componentName = template.component.name || 'Document';
-          source = await getDocumentSource(componentName);
-        }
-        
-        if (source) {
-          setEditorCode(source);
-        }
+        const updatedElement = htmlTemplateToReact(currentHTMLTemplate);
+        const UpdatedComponent = () => updatedElement;
+        setEditableComponent(UpdatedComponent);
       } catch (error) {
-        console.error('Error loading document source:', error);
+        console.error('Error updating editable component:', error);
+        setEditableComponent(null);
       }
-    };
-
-    loadSource();
-  }, [template, setEditorCode]);
+    }
+  }, [currentHTMLTemplate, selectedPage, setEditorCode]);
   
   const extractLayers = useCallback((element: Element, depth: number = 0): PageElement[] => {
     const children = Array.from(element.children);
@@ -127,41 +138,52 @@ const DocumentViewer: React.FC = () => {
     return layers;
   }, []);
   
+  // Reset editable component when switching to code view
   useEffect(() => {
-    if (documentRef.current) {
-      const pageElements = Array.from(documentRef.current.querySelectorAll('[data-page]'));
-      setPages(pageElements as HTMLElement[]);
-      
-      // Extract document info
-      const docRoot = documentRef.current.querySelector('[data-document-root]');
-      if (docRoot) {
-        setDocumentInfo({
-          paperSize: docRoot.getAttribute('data-paper-size') || 'A4',
-          width: parseInt(docRoot.getAttribute('data-paper-width') || '595'),
-          height: parseInt(docRoot.getAttribute('data-paper-height') || '842')
+    if (viewMode === 'code') {
+      setEditableComponent(null);
+      setCompilationError(null);
+    }
+  }, [viewMode]);
+  
+  useEffect(() => {
+    const updatePages = () => {
+      if (documentRef.current) {
+        const pageElements = Array.from(documentRef.current.querySelectorAll('[data-page]'));
+        setPages(pageElements as HTMLElement[]);
+        
+        // Extract document info
+        const docRoot = documentRef.current.querySelector('[data-document-root]');
+        if (docRoot) {
+          setDocumentInfo({
+            paperSize: docRoot.getAttribute('data-paper-size') || 'A4',
+            width: parseInt(docRoot.getAttribute('data-paper-width') || '595'),
+            height: parseInt(docRoot.getAttribute('data-paper-height') || '842')
+          });
+        }
+        
+        // Add click handlers to pages
+        pageElements.forEach((page, index) => {
+          const htmlPage = page as HTMLElement;
+          htmlPage.style.cursor = 'pointer';
+          htmlPage.onclick = () => {
+            setSelectedPage(index);
+            if (scrollToPageRef.current) {
+              scrollToPageRef.current(index);
+            }
+          };
         });
       }
-      
-      // Extract layers from selected page
-      // Layers functionality is currently disabled
-      // if (pageElements[selectedPage]) {
-      //   const extractedLayers = extractLayers(pageElements[selectedPage], 0);
-      //   setLayers(extractedLayers);
-      // }
-      
-      // Add click handlers to pages
-      pageElements.forEach((page, index) => {
-        const htmlPage = page as HTMLElement;
-        htmlPage.style.cursor = 'pointer';
-        htmlPage.onclick = () => {
-          setSelectedPage(index);
-          if (scrollToPageRef.current) {
-            scrollToPageRef.current(index);
-          }
-        };
-      });
-    }
-  }, [selectedPage, template, editableComponent, extractLayers]);
+    };
+    
+    // Initial update
+    updatePages();
+    
+    // Update after a small delay to ensure DOM is ready
+    const timer = setTimeout(updatePages, 100);
+    
+    return () => clearTimeout(timer);
+  }, [selectedPage, editableComponent, currentHTMLTemplate]);
   
   // Handle scroll to detect visible page
   useEffect(() => {
@@ -232,6 +254,7 @@ const DocumentViewer: React.FC = () => {
     };
   }, []);
   
+  
   if (!template) {
     return (
       <div className="document-viewer-error">
@@ -243,8 +266,8 @@ const DocumentViewer: React.FC = () => {
   }
   
   // For dynamic templates, component might not exist yet
-  const Component = template.component;
-  const isDynamicTemplate = 'code' in template && !template.component;
+  const Component = template?.component;
+  // const isDynamicTemplate = template && 'code' in template && !template.component;
   
   const renderLayerItem = (layer: PageElement, depth: number = 0) => (
     <div key={layer.id} className="layer-item" style={{ paddingLeft: depth * 20 }}>
@@ -282,9 +305,9 @@ const DocumentViewer: React.FC = () => {
     <div className="document-viewer-container">
       {/* Top Toolbar */}
       <div className="viewer-toolbar">
-        <Link to="/" className="back-button">← Documents</Link>
+        <Link to="/" className="back-button">← Pagayi</Link>
         <div className="document-title">
-          {template.name}
+          {template?.name || 'Loading...'}
         </div>
         <div className="toolbar-controls">
           <div className="zoom-controls">
@@ -340,15 +363,18 @@ const DocumentViewer: React.FC = () => {
           <button 
             className="export-button"
             onClick={() => {
-              if (Component) {
-                const serialized = serializeDocument(Component);
-                if (serialized) {
-                  downloadTemplate(serialized);
-                } else {
-                  alert('Failed to export template');
-                }
+              if (currentHTMLTemplate) {
+                const blob = new Blob([JSON.stringify(currentHTMLTemplate, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentHTMLTemplate.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
               } else {
-                alert('Please switch to Code view and compile the template first');
+                alert('No template to export');
               }
             }}
             title="Export Template as JSON"
@@ -358,35 +384,42 @@ const DocumentViewer: React.FC = () => {
           <button 
             className="export-button"
             onClick={() => {
-              // Export template in Babel-compatible format
-              if (!Component && isDynamicTemplate) {
-                alert('Please switch to Code view and compile the template first');
-                return;
-              }
-              const exportedCode = exportTemplateForBabel(template.name, Component);
-              
-              if (exportedCode) {
-                const blob = new Blob([exportedCode], { type: 'text/typescript' });
+              if (currentHTMLTemplate) {
+                // Export as HTML file
+                let htmlContent = '<!DOCTYPE html>\n<html>\n<head>\n<title>' + currentHTMLTemplate.name + '</title>\n</head>\n<body>\n';
+                currentHTMLTemplate.pages.forEach((page, index) => {
+                  htmlContent += `<!-- Page ${index + 1} -->\n`;
+                  htmlContent += `<div style="background: ${page.background || '#ffffff'}; padding: 20px; margin-bottom: 20px;">\n`;
+                  htmlContent += page.content;
+                  htmlContent += '\n</div>\n';
+                });
+                htmlContent += '</body>\n</html>';
+                
+                const blob = new Blob([htmlContent], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${template.name.replace(/\s+/g, '-').toLowerCase()}.tsx`;
+                a.download = `${currentHTMLTemplate.name.replace(/\s+/g, '-').toLowerCase()}.html`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
               } else {
-                alert('Failed to export template');
+                alert('No template to export');
               }
             }}
-            title="Export Template as TSX (Original Source)"
+            title="Export Template as HTML"
           >
-            📄 Export TSX
+            📄 Export HTML
           </button>
+          
+          <div className="toolbar-separator" />
+          
+          <ProfileButton />
         </div>
       </div>
       
-      <div className="viewer-main">
+      <div className="viewer-main" data-view-mode={viewMode}>
         {/* Left Sidebar - Document Properties */}
         <div className="sidebar sidebar-left">
           <div className="panel">
@@ -396,27 +429,27 @@ const DocumentViewer: React.FC = () => {
             <div className="panel-content">
               <div className="property-group">
                 <label>Name</label>
-                <div className="property-value">{template.name}</div>
+                <div className="property-value">{template?.name || 'Loading...'}</div>
               </div>
               <div className="property-group">
                 <label>Type</label>
                 <div className="property-value">
-                  {template.name.includes('Catalog') ? 'Booklet' : 'Flyer'}
+                  {template?.name?.includes('Catalog') ? 'Booklet' : 'Flyer'}
                 </div>
               </div>
               <div className="property-group">
                 <label>Pages</label>
-                <div className="property-value">{pages.length || 1}</div>
+                <div className="property-value">{currentHTMLTemplate?.pages.length || pages.length || 1}</div>
               </div>
               <div className="property-group">
                 <label>Paper Size</label>
                 <div className="property-value">
-                  {PAPER_SIZES[documentInfo?.paperSize || 'A4']?.displayName || 'Custom'}
+                  {currentHTMLTemplate?.paperSize ? PAPER_SIZES[currentHTMLTemplate.paperSize]?.displayName || currentHTMLTemplate.paperSize : 'A4'}
                 </div>
               </div>
               <div className="property-group">
                 <label>Description</label>
-                <div className="property-value small">{template.description}</div>
+                <div className="property-value small">{template?.description || ''}</div>
               </div>
             </div>
           </div>
@@ -427,7 +460,7 @@ const DocumentViewer: React.FC = () => {
               <h3>Pages</h3>
             </div>
             <div className="panel-content pages-list">
-              {pages.map((_, index) => (
+              {(currentHTMLTemplate?.pages || pages).map((_, index) => (
                 <div 
                   key={index}
                   className={`page-list-item ${selectedPage === index ? 'selected' : ''} ${visiblePage === index ? 'visible' : ''}`}
@@ -435,9 +468,17 @@ const DocumentViewer: React.FC = () => {
                     setSelectedPage(index);
                     scrollToPage(index);
                   }}
+                  title={
+                    viewMode === 'code' && selectedPage === index 
+                      ? 'Currently editing this page' 
+                      : `Click to ${viewMode === 'code' ? 'edit' : 'view'} page ${index + 1}`
+                  }
                 >
                   <span className="page-number">Page {index + 1}</span>
-                  {visiblePage === index && <span className="visible-indicator">👁️</span>}
+                  <div className="page-indicators">
+                    {visiblePage === index && <span className="visible-indicator" title="Currently viewing">👁️</span>}
+                    {viewMode === 'code' && selectedPage === index && <span className="editing-indicator" title="Currently editing">✏️</span>}
+                  </div>
                 </div>
               ))}
             </div>
@@ -463,28 +504,105 @@ const DocumentViewer: React.FC = () => {
               >
                 <div className="document-shadow continuous-scroll" data-focus-mode={focusMode} data-selected-page={selectedPage}>
                   {(() => {
-                    if (editableComponent) {
-                      console.log('Using edited component');
-                      console.log('editableComponent type:', typeof editableComponent);
-                      console.log('editableComponent:', editableComponent);
-                      
-                      // If it's already a React element, just return it
-                      if (editableComponent && typeof editableComponent === 'object' && (editableComponent as any).$$typeof) {
-                        console.log('editableComponent is already a React element!');
-                        return editableComponent as React.ReactElement;
+                    try {
+                      // In code view, show the component compiled from CodeEditor
+                      if (viewMode === 'code' && editableComponent) {
+                        // Check if it's already a React element
+                        if (React.isValidElement(editableComponent)) {
+                          return editableComponent;
+                        }
+                        // Otherwise, render it as a component
+                        const EditedComponent = editableComponent;
+                        return <EditedComponent key={`edited-${documentName}`} />;
                       }
                       
-                      // Otherwise, render it as a component
-                      const EditedComponent = editableComponent;
-                      return <EditedComponent />;
-                    } else if (Component) {
-                      console.log('Using original component');
-                      return <Component />;
-                    } else if (isDynamicTemplate) {
-                      // For dynamic templates without a compiled component yet
-                      return <div style={{ padding: '20px', textAlign: 'center' }}>
-                        <p>Loading dynamic template...</p>
-                        <p style={{ fontSize: '14px', color: '#666' }}>Switch to Code view to see and compile the template.</p>
+                      // Show error state if compilation failed in code view
+                      if (viewMode === 'code' && compilationError) {
+                        return (
+                          <div style={{ 
+                            padding: '40px', 
+                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '400px',
+                            backgroundColor: '#fee',
+                            border: '1px solid #fcc',
+                            borderRadius: '8px',
+                            margin: '20px'
+                          }}>
+                            <div style={{
+                              fontSize: '48px',
+                              color: '#f44',
+                              marginBottom: '20px'
+                            }}>⚠️</div>
+                            <h3 style={{ fontSize: '20px', color: '#f44', marginBottom: '10px' }}>
+                              Compilation Error
+                            </h3>
+                            <p style={{ 
+                              fontSize: '14px', 
+                              color: '#666',
+                              maxWidth: '600px',
+                              lineHeight: '1.5',
+                              fontFamily: 'monospace',
+                              backgroundColor: '#fff',
+                              padding: '15px',
+                              borderRadius: '4px',
+                              border: '1px solid #ddd'
+                            }}>
+                              {compilationError}
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      // Show loading state while CodeEditor compiles (only in code view)
+                      if (viewMode === 'code') {
+                        return (
+                        <div style={{ 
+                          padding: '40px', 
+                          textAlign: 'center',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minHeight: '400px'
+                        }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            border: '3px solid #f3f3f3',
+                            borderTop: '3px solid #3498db',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                            marginBottom: '20px'
+                          }} />
+                          <p style={{ fontSize: '16px', color: '#666' }}>Loading template...</p>
+                        </div>
+                        );
+                      }
+                      
+                      // In visual mode, show the updated component if available, otherwise the original
+                      if (editableComponent) {
+                        // Check if it's already a React element
+                        if (React.isValidElement(editableComponent)) {
+                          return editableComponent;
+                        }
+                        // Otherwise, render it as a component
+                        const EditedComponent = editableComponent;
+                        return <EditedComponent key={`edited-visual-${documentName}`} />;
+                      } else if (Component) {
+                        return <Component key={`template-${documentName}`} />;
+                      }
+                      
+                      // Fallback if no component
+                      return <div>No template found</div>;
+                    } catch (error) {
+                      console.error('Error rendering template:', error);
+                      return <div style={{ padding: '20px', textAlign: 'center', color: 'red' }}>
+                        <p>Error rendering template</p>
+                        <p style={{ fontSize: '14px' }}>{(error as Error)?.message || 'Unknown error'}</p>
                       </div>;
                     }
                   })()}
@@ -493,23 +611,28 @@ const DocumentViewer: React.FC = () => {
             </div>
           </div>
           
-          <div style={{ display: viewMode === 'code' ? 'flex' : 'none', height: '100%', flexDirection: 'column' }}>
-            <CodeEditor 
-              documentComponent={Component}
-              documentName={template.name || (Component && Component.name) || 'Document'}
-              onCodeChange={(updatedComponent) => {
-                console.log('onCodeChange received:', updatedComponent);
-                console.log('Type:', typeof updatedComponent);
-                setEditableComponent(updatedComponent);
-              }}
-              onCodeUpdate={(code) => {
-                setEditorCode(code);
-              }}
-            />
-          </div>
+          <HTMLCodeEditor 
+            templateId={currentHTMLTemplate?.id}
+            initialTemplate={currentHTMLTemplate || undefined}
+            selectedPageIndex={selectedPage}
+            onPreviewUpdate={(element, error) => {
+              if (element) {
+                // Update the component for display
+                const UpdatedComponent = () => element;
+                setEditableComponent(UpdatedComponent);
+              } else {
+                setEditableComponent(null);
+              }
+              setCompilationError(error || null);
+            }}
+            onTemplateUpdate={(updatedTemplate) => {
+              setCurrentHTMLTemplate(updatedTemplate);
+            }}
+            isVisible={viewMode === 'code'}
+          />
           
           {/* Page Navigation */}
-          {pages.length > 1 && (
+          {(currentHTMLTemplate?.pages.length || pages.length) > 1 && (
             <div className="page-navigation">
               <button 
                 onClick={() => {
@@ -522,15 +645,16 @@ const DocumentViewer: React.FC = () => {
                 Previous
               </button>
               <span className="page-info">
-                Page {selectedPage + 1} of {pages.length}
+                Page {selectedPage + 1} of {currentHTMLTemplate?.pages.length || pages.length}
               </span>
               <button 
                 onClick={() => {
-                  const newPage = Math.min(pages.length - 1, selectedPage + 1);
+                  const pageCount = currentHTMLTemplate?.pages.length || pages.length;
+                  const newPage = Math.min(pageCount - 1, selectedPage + 1);
                   setSelectedPage(newPage);
                   scrollToPage(newPage);
                 }}
-                disabled={selectedPage === pages.length - 1}
+                disabled={selectedPage === (currentHTMLTemplate?.pages.length || pages.length) - 1}
               >
                 Next
               </button>
@@ -538,7 +662,7 @@ const DocumentViewer: React.FC = () => {
           )}
           
           {/* Floating Focus Button */}
-          {pages.length > 1 && (
+          {(currentHTMLTemplate?.pages.length || pages.length) > 1 && (
             <button 
               className={`focus-mode-button ${focusMode ? 'active' : ''}`}
               onClick={toggleFocusMode}
@@ -552,12 +676,27 @@ const DocumentViewer: React.FC = () => {
         {/* Right Sidebar - AI Assistant and Layers */}
         <div className="sidebar sidebar-right">
           {/* AI Assistant Panel */}
-          <AIAssistant 
-            documentType={template?.type || 'document'}
-            collapsed={aiPanelCollapsed}
-            onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}
-            selectedPageIndex={selectedPage}
-          />
+          {currentHTMLTemplate && (
+            <HTMLAIAssistant 
+              template={currentHTMLTemplate}
+              selectedPageIndex={selectedPage}
+              onTemplateUpdate={(updatedTemplate) => {
+                setCurrentHTMLTemplate(updatedTemplate);
+                // Update the preview
+                try {
+                  const element = htmlTemplateToReact(updatedTemplate);
+                  const UpdatedComponent = () => element;
+                  setEditableComponent(UpdatedComponent);
+                  setCompilationError(null);
+                } catch (error) {
+                  console.error('Error updating preview:', error);
+                  setCompilationError(error instanceof Error ? error.message : 'Failed to render template');
+                }
+              }}
+              collapsed={aiPanelCollapsed}
+              onToggleCollapse={() => setAiPanelCollapsed(!aiPanelCollapsed)}
+            />
+          )}
           
           {/* Layers Panel - Hidden for now */}
           {/* <div className={`panel layers-panel-container ${layersPanelCollapsed ? 'collapsed' : ''}`}>

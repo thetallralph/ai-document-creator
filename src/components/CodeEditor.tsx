@@ -6,23 +6,30 @@ import { useEditorCode } from '../contexts/EditorCodeContext';
 import './CodeEditor.css';
 
 interface CodeEditorProps {
-  documentComponent: React.ComponentType;
+  documentComponent: React.ComponentType | null;
   documentName?: string;
-  onCodeChange?: (updatedComponent: React.ComponentType | null) => void;
+  onCodeChange?: (updatedComponent: React.ComponentType | null, error?: string) => void;
   onCodeUpdate?: (code: string) => void;
+  onCompilationStart?: () => void;
+  isVisible?: boolean;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, documentName, onCodeChange, onCodeUpdate }) => {
+export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, documentName, onCodeChange, onCodeUpdate, isVisible = true }) => {
   const { editorCode, setEditorCode } = useEditorCode();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | null>(null);
-  const [isCompiling, setIsCompiling] = useState(false);
+  // const [isCompiling, setIsCompiling] = useState(false);
   const [hasUserEdits, setHasUserEdits] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Reset edits when document changes
   useEffect(() => {
     setHasUserEdits(false);
+    setError(null);
+    setLoadError(null);
+    setSaveStatus(null);
+    setLoading(true);
   }, [documentName]);
 
   // Track the last code set by user to detect external changes
@@ -36,13 +43,24 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
   
   // Flag to prevent compilation loops
   const isInitialLoadRef = useRef(true);
+  
+  // Track current document to prevent stale updates
+  const currentDocumentRef = useRef<string | undefined>(documentName);
+  
+  // Track compilation state with ref to avoid dependency issues
+  const isCompilingRef = useRef(false);
 
   const compileCode = useCallback(async (value: string) => {
-    if (isCompiling) {
+    console.log('compileCode called, isCompiling:', isCompilingRef.current, 'value length:', value?.length);
+    if (isCompilingRef.current || !value) {
+      console.log('Skipping compilation - isCompiling:', isCompilingRef.current, 'has value:', !!value);
       return;
     }
     
-    setIsCompiling(true);
+    isCompilingRef.current = true;
+    // setIsCompiling(true);
+    setError(null);
+    
     
     try {
       // Import the required components
@@ -54,25 +72,38 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
       console.log('Document component:', Document);
       console.log('Page component:', Page);
       
-      // Extract the component name from the code
-      const componentNameMatch = value.match(/export\s+(?:const|function)\s+(\w+)/);
-      let componentName = componentNameMatch ? componentNameMatch[1] : 'EditableDocument';
-      
-      // If the original code has an invalid component name (with spaces), fix it
+      // First, let's fix any invalid component names with spaces
+      let processedCode = value;
       const invalidNameMatch = value.match(/export\s+(?:const|function)\s+([^=]+?)\s*=/);
-      if (invalidNameMatch && invalidNameMatch[1].includes(' ')) {
+      let componentName = 'EditableDocument';
+      
+      if (invalidNameMatch) {
         const originalName = invalidNameMatch[1].trim();
-        const sanitizedName = originalName.replace(/\s+/g, '');
-        componentName = sanitizedName;
-        // Replace the invalid name with the sanitized one in the code
-        value = value.replace(
-          new RegExp(`export\\s+(const|function)\\s+${originalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`),
-          `export $1 ${sanitizedName} =`
-        );
+        if (originalName.includes(' ')) {
+          // Component name has spaces, need to fix it
+          const sanitizedName = originalName.replace(/\s+/g, '');
+          componentName = sanitizedName;
+          console.log('Fixing invalid component name:', originalName, '->', sanitizedName);
+          // Replace the invalid name with the sanitized one in the code
+          processedCode = processedCode.replace(
+            new RegExp(`export\\s+(const|function)\\s+${originalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*=`),
+            `export $1 ${sanitizedName} =`
+          );
+          console.log('Code after fix (first 200 chars):', processedCode.substring(0, 200));
+        } else {
+          // Valid component name
+          componentName = originalName;
+        }
+      } else {
+        // Try to extract just word characters as fallback
+        const componentNameMatch = value.match(/export\s+(?:const|function)\s+(\w+)/);
+        if (componentNameMatch) {
+          componentName = componentNameMatch[1];
+        }
       }
       
       // Simple approach: just remove imports and transform
-      const codeToTransform = value
+      const codeToTransform = processedCode
         .replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, ''); // Remove imports
       
       // Transform JSX using Babel
@@ -116,7 +147,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
         setSaveStatus('saved');
         if (onCodeChange) {
           // Pass the component directly - it already has Document and Page in its closure
-          onCodeChange(component);
+          onCodeChange(component, undefined);
         }
         // Clear save status after a delay
         setTimeout(() => setSaveStatus(null), 2000);
@@ -126,50 +157,85 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ documentComponent, docum
     } catch (err) {
       console.error('Compilation error:', err);
       setError(err instanceof Error ? err.message : 'Invalid code');
+      // Set null on error to indicate compilation failure
+      const errorMessage = err instanceof Error ? err.message : 'Invalid code';
       if (onCodeChange) {
-        onCodeChange(null);
+        onCodeChange(null, errorMessage);
       }
     } finally {
-      setIsCompiling(false);
+      isCompilingRef.current = false;
+      // setIsCompiling(false);
     }
-  }, [isCompiling, onCodeChange]);
+  }, [onCodeChange]); // Remove isCompiling - we'll use a ref instead
 
   useEffect(() => {
-    // Don't reload source if user has made edits or if editor code is already loaded
-    if (hasUserEdits || editorCode) {
+    // Update current document ref
+    currentDocumentRef.current = documentName;
+    
+    // Reset initial load flag when document changes
+    isInitialLoadRef.current = true;
+    
+    // Check if editor code is already set by DocumentViewer
+    if (editorCode && !hasUserEdits) {
+      // Editor code was already set (likely by DocumentViewer)
       setLoading(false);
+      previousEditorCodeRef.current = editorCode;
+      lastUserCodeRef.current = editorCode;
+      
+      // Compile the initial code
+      setTimeout(() => {
+        if (currentDocumentRef.current === documentName) {
+          compileCode(editorCode);
+        }
+      }, 300);
       return;
     }
     
+    // Always reload source when document changes, regardless of edits
     const loadDocumentSource = async () => {
       setLoading(true);
+      setLoadError(null);
       
-      // Try to get the component name from the function
-      const componentName = documentName || documentComponent.name || 'EditableDocument';
       
-      // Try to load the actual source
-      const source = await getDocumentSource(componentName);
-      
-      if (source) {
-        setEditorCode(source);
-        previousEditorCodeRef.current = source; // Track initial load
-        lastUserCodeRef.current = source; // This is not a user edit
-        // Notify parent of initial code
-        if (onCodeUpdate) {
-          onCodeUpdate(source);
+      try {
+        // Try to get the component name from the function
+        const componentName = documentName || (documentComponent && documentComponent.name) || 'EditableDocument';
+        
+        // Try to load the actual source
+        const source = await getDocumentSource(componentName);
+        
+        // Check if this is still the current document (prevent race conditions)
+        if (currentDocumentRef.current !== documentName) {
+          console.log('Document changed during load, ignoring stale source');
+          return;
         }
-        // Compile the initial code
-        compileCode(source);
-      } else {
-        // Fallback to a basic template
-        const template = `import { Document, Page } from '../../components/document-components';
+        
+        if (source) {
+          setEditorCode(source);
+          previousEditorCodeRef.current = source; // Track initial load
+          // Don't set lastUserCodeRef here - let external detection work
+          // Notify parent of initial code
+          if (onCodeUpdate) {
+            onCodeUpdate(source);
+          }
+          // Initial compile after load
+          setTimeout(() => {
+            if (currentDocumentRef.current === documentName && source) {
+              compileCode(source);
+            }
+          }, 300);
+        } else {
+          // Fallback to a basic template
+          const sanitizedName = componentName.replace(/\s+/g, '');
+          const displayName = componentName.replace(/([A-Z])/g, ' $1').trim();
+          const template = `import { Document, Page } from '../../components/document-components';
 
-export const ${componentName} = () => {
+export const ${sanitizedName} = () => {
   return (
-    <Document title="${componentName.replace(/([A-Z])/g, ' $1').trim()}" type="document" paperSize="A4">
+    <Document title="${displayName}" type="document" paperSize="A4">
       <Page background="#ffffff">
         <h1 style={{ position: 'absolute', top: 50, left: 50, fontSize: '32px' }}>
-          ${componentName.replace(/([A-Z])/g, ' $1').trim()}
+          ${displayName}
         </h1>
         <p style={{ position: 'absolute', top: 120, left: 50, fontSize: '16px' }}>
           Edit this code to modify the document.
@@ -178,25 +244,61 @@ export const ${componentName} = () => {
     </Document>
   );
 };`;
-        setEditorCode(template);
-        previousEditorCodeRef.current = template; // Track initial load
-        lastUserCodeRef.current = template; // This is not a user edit
-        // Notify parent of fallback template
-        if (onCodeUpdate) {
-          onCodeUpdate(template);
+          setEditorCode(template);
+          previousEditorCodeRef.current = template; // Track initial load
+          // Don't set lastUserCodeRef here - let external detection work
+          // Notify parent of fallback template
+          if (onCodeUpdate) {
+            onCodeUpdate(template);
+          }
+          // Initial compile after load
+          setTimeout(() => {
+            if (currentDocumentRef.current === documentName && source) {
+              compileCode(source);
+            }
+          }, 300);
         }
-        // Compile the fallback template
-        compileCode(template);
+      } catch (error) {
+        console.error('Error loading template source:', error);
+        setLoadError('Failed to load template source');
+        // Still provide a fallback
+        const sanitizedName = (documentName || 'Document').replace(/\s+/g, '');
+        const displayName = (documentName || 'Document').replace(/([A-Z])/g, ' $1').trim();
+        const fallbackTemplate = `import { Document, Page } from '../../components/document-components';
+
+export const ${sanitizedName} = () => {
+  return (
+    <Document title="${displayName}" type="document" paperSize="A4">
+      <Page background="#ffffff">
+        <h1 style={{ position: 'absolute', top: 50, left: 50, fontSize: '32px' }}>
+          ${displayName}
+        </h1>
+        <p style={{ position: 'absolute', top: 120, left: 50, fontSize: '16px', color: 'red' }}>
+          Error loading template. Edit this code to create your document.
+        </p>
+      </Page>
+    </Document>
+  );
+};`;
+        setEditorCode(fallbackTemplate);
+        if (onCodeUpdate) {
+          onCodeUpdate(fallbackTemplate);
+        }
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     loadDocumentSource();
-  }, [documentComponent, documentName, hasUserEdits, editorCode, setEditorCode, onCodeUpdate, compileCode]);
+  }, [documentComponent, documentName]); // Remove functions from dependencies to prevent loops
 
   // Detect when editor code changes from external source (AI)
   useEffect(() => {
+    console.log('External change detection effect - isInitial:', isInitialLoadRef.current, 
+                'editorCode length:', editorCode?.length,
+                'previousRef length:', previousEditorCodeRef.current?.length,
+                'lastUserRef length:', lastUserCodeRef.current?.length);
+    
     // Skip on initial load
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
@@ -219,7 +321,7 @@ export const ${componentName} = () => {
       compileCode(editorCode);
       setTimeout(() => setSaveStatus('saved'), 500);
     }
-  }, [editorCode, compileCode]);
+  }, [editorCode]); // Remove compileCode from dependencies to prevent loops
 
   const handleCodeChange = useCallback((value: string | undefined) => {
     if (!value) return;
@@ -245,7 +347,7 @@ export const ${componentName} = () => {
     debounceTimer.current = setTimeout(() => {
       compileCode(value);
     }, 1000); // Compile after 1 second of no typing
-  }, [compileCode, onCodeUpdate, setEditorCode]);
+  }, []); // Remove all dependencies - they're stable or handled via refs
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -257,7 +359,7 @@ export const ${componentName} = () => {
   }, []);
 
   return (
-    <div className="code-editor">
+    <div className="code-editor" style={{ display: isVisible ? 'flex' : 'none' }}>
       <div className="code-editor-header">
         <h3>Code Editor</h3>
         <div className="code-editor-status">
@@ -268,7 +370,10 @@ export const ${componentName} = () => {
       </div>
       
       {loading ? (
-        <div className="editor-loading">Loading code...</div>
+        <div className="editor-loading">
+          <div>Loading template...</div>
+          {loadError && <div className="load-error">{loadError}</div>}
+        </div>
       ) : (
         <Editor
           height="100%"

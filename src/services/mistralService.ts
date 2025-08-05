@@ -239,6 +239,42 @@ Keep suggestions concise and practical.`;
       throw error;
     }
   }
+
+  async generateHTMLContent(prompt: string): Promise<string> {
+    if (!this.client) {
+      throw new Error('Mistral client not initialized');
+    }
+
+    try {
+      let responseContent: string;
+      
+      if (this.useAgent) {
+        responseContent = await this.sendMessageToAgent(prompt);
+      } else {
+        responseContent = await this.sendMessageToModel(prompt, 0.7, 4000);
+      }
+
+      // Clean up the response
+      let cleanedContent = responseContent.trim();
+      
+      // Remove markdown code blocks if present
+      cleanedContent = cleanedContent.replace(/^```(?:html?)?\s*\n/gm, '');
+      cleanedContent = cleanedContent.replace(/\n```$/gm, '');
+      
+      // Remove any explanatory text before/after HTML
+      const firstTagIndex = cleanedContent.indexOf('<');
+      const lastTagIndex = cleanedContent.lastIndexOf('>');
+      
+      if (firstTagIndex !== -1 && lastTagIndex !== -1 && lastTagIndex > firstTagIndex) {
+        cleanedContent = cleanedContent.substring(firstTagIndex, lastTagIndex + 1);
+      }
+
+      return cleanedContent;
+    } catch (error) {
+      console.error('Mistral API error:', error);
+      throw error;
+    }
+  }
 }
 
 export const mistralService = new MistralService();

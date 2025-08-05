@@ -259,6 +259,18 @@
   border-bottom: 1px solid #2a2a2a;
 }
 
+/* Template Icon Placeholder */
+.template-icon-placeholder {
+  font-size: 64px;
+  opacity: 0.2;
+  transition: all 0.3s ease;
+}
+
+.template-card:hover .template-icon-placeholder {
+  opacity: 0.3;
+  transform: scale(1.1);
+}
+
 .template-type-badge {
   position: absolute;
   top: 16px;
